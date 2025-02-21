@@ -27,3 +27,30 @@ EpistemIQ is a Visual Studio Code extension that integrates interactive, inline 
    npm run prettier_check
    npm run prettier_fix
    ```
+
+```
+epesteme-ai
+├─ .prettierrc
+├─ README.md
+├─ package-lock.json
+├─ package.json
+├─ src
+│  ├─ commands
+│  │  ├─ assistantPanel.ts
+│  │  ├─ epistemeCommands.ts
+│  │  └─ learnWithEpisteme.ts
+│  ├─ config.ts
+│  ├─ extension.ts
+│  ├─ providers
+│  │  ├─ codeActionsProvider.ts
+│  │  ├─ codeLensProvider.ts
+│  │  ├─ epistemeContentProvider.ts
+│  │  └─ epistemeFixActionProvider.ts
+│  ├─ types.d.ts
+│  └─ utils
+│     ├─ prompts.ts
+│     ├─ queryHelpers.ts
+│     └─ templates.ts
+└─ tsconfig.json
+
+```
