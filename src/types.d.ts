@@ -1,4 +1,6 @@
 type Option = {
+  question(arg0: any, question: any): string;
+  options: any;
   label: string;
   isCorrect: boolean;
 };
@@ -9,7 +11,7 @@ type FollowupQuestion = {
 };
 
 type FixSuggestion = {
-    fixedCode: string;
-    startLine: number;
-    endLine: number;
-  }
+  fixedCode: string;
+  startLine: number;
+  endLine: number;
+};

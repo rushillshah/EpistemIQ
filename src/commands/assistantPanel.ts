@@ -9,10 +9,10 @@ import * as vscode from 'vscode';
 
 export function createAssistantPanel(context: vscode.ExtensionContext): void {
   const panel = vscode.window.createWebviewPanel(
-    'learnCodeAIAssistant', // Internal identifier
-    'LearnCode AI Assistant', // Panel title
-    vscode.ViewColumn.One, // Show in editor column one
-    { enableScripts: true } // Allow scripts in the webview
+    'epistemIQEducation',
+    'EpistemIQ Education',
+    vscode.ViewColumn.One,
+    { enableScripts: true }
   );
 
   panel.webview.html = getAssistantWebviewContent();
@@ -25,17 +25,16 @@ function getAssistantWebviewContent(): string {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>LearnCode AI Assistant</title>
+        <title>EpistemIQ Education</title>
       </head>
       <body>
-        <h1>Welcome to LearnCode AI Assistant</h1>
+        <h1>Welcome to EpistemIQ</h1>
         <p>This is your interactive interface for guided coding decisions.</p>
         <ul>
           <li>Step-by-step guidance</li>
-          <li>Interactive debugging</li>
-          <li>Incremental autocomplete with reasoning</li>
+          <li>Interactive debugging with quizzes and tailored explanations</li>
           <li>Adaptive challenge prompts</li>
-          <li>Help cooldown system</li>
+          <li>Free selection quizzes and explanations</li>
         </ul>
       </body>
     </html>

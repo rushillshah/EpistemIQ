@@ -11,13 +11,14 @@ export class EpistemeCodeLensProvider implements vscode.CodeLensProvider {
   provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
     const lenses: vscode.CodeLens[] = [];
     const diagnostics = vscode.languages.getDiagnostics(document.uri);
+
     diagnostics.forEach((diagnostic) => {
       const lensRange = new vscode.Range(
         diagnostic.range.start,
         diagnostic.range.start
       );
       const command: vscode.Command = {
-        command: 'episteme.errors',
+        command: 'epistemiq.errors',
         title: 'Debug with Episteme',
         arguments: [document, diagnostic],
       };

@@ -1,48 +1,46 @@
 {
-  "name": "learncode-ai",
-  "displayName": "LearnCode AI",
+  "name": "epistem-iq",
+  "displayName": "EpistemIQ",
   "description": "A VS Code extension that uses AI to guide you through coding decisions.",
   "version": "0.0.1",
   "main": "./out/extension.js",
   "engines": {
     "vscode": "^1.75.0"
   },
-    "activationEvents": [
-      "onCommand:episteme.understand",
-      "onCommand:episteme.quiz",
-      "onCommand:episteme.errors"
-    ],
-    "contributes": {
-      "commands": [
-        {
-          "command": "episteme.understand",
-          "title": "Understand with Episteme"
-        },
-        {
-          "command": "episteme.quiz",
-          "title": "Quiz with Episteme"
-        },
-        {
-          "command": "episteme.errors",
-          "title": "Debug with Episteme"
-        }
-      ],
-      "menus": {
-        "editor/context": [
-          {
-            "command": "episteme.understand",
-            "when": "editorHasSelection",
-            "group": "navigation"
-          },
-          {
-            "command": "episteme.quiz",
-            "when": "editorHasSelection",
-            "group": "navigation"
-          }
-        ]
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "epistemiq.understand",
+        "title": "Understand with EpistemIQ"
+      },
+      {
+        "command": "epistemiq.quiz",
+        "title": "Quiz with EpistemIQ"
+      },
+      {
+        "command": "epistemiq.errors",
+        "title": "Debug with EpistemIQ"
       }
-    },
-    "scripts": {
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "epistemiq.understand",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        },
+        {
+          "command": "epistemiq.quiz",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
     "prettier_check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\"",
