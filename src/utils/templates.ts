@@ -4,7 +4,6 @@ export function buildQuizHtml(
   options: { label: string; isCorrect: boolean }[],
   diagnosticMessage: string
 ): string {
-  // Format diagnostic message using our helper.
   const formattedDiagnostic = formatLLMResponse(diagnosticMessage);
   return `
       <!DOCTYPE html>
@@ -99,10 +98,6 @@ export function buildQuizHtml(
     `;
 }
 
-/**
- * Returns HTML for the "Understand" input screen.
- * Shows the selected code (rendered as markdown) and a textarea for user input.
- */
 export function getUnderstandInputHTML(code: string): string {
   const formattedCode = formatLLMResponse(code);
   return `<!DOCTYPE html>
@@ -171,10 +166,6 @@ export function getUnderstandInputHTML(code: string): string {
     </html>`;
 }
 
-/**
- * Returns HTML for displaying an explanation.
- * The provided explanation (from the LLM) is assumed to be in markdown.
- */
 export function getUnderstandResultHTML(explanation: string): string {
   const formattedExplanation = formatLLMResponse(explanation);
   return `<!DOCTYPE html>
@@ -228,10 +219,6 @@ export function getUnderstandResultHTML(explanation: string): string {
     </html>`;
 }
 
-/**
- * Returns HTML for the quiz focus input.
- * Displays the selected code for context and an input field for the quiz focus.
- */
 export function getQuizFocusHTML(code: string): string {
   const formattedCode = formatLLMResponse(code);
   return `<!DOCTYPE html>
@@ -296,9 +283,6 @@ export function getQuizFocusHTML(code: string): string {
     </html>`;
 }
 
-/**
- * Returns HTML for a single quiz question.
- */
 export function getQuizQuestionHTML(questionObj: {
   question: string;
   options: { label: string; isCorrect: boolean }[];
@@ -366,9 +350,6 @@ export function getQuizQuestionHTML(questionObj: {
     </html>`;
 }
 
-/**
- * Returns HTML for the quiz feedback screen.
- */
 export function getQuizFeedbackHTML(feedback: string): string {
   const formattedFeedback = formatLLMResponse(feedback);
   return `<!DOCTYPE html>
@@ -420,9 +401,6 @@ export function getQuizFeedbackHTML(feedback: string): string {
     </html>`;
 }
 
-/**
- * Returns HTML for the initial choice screen.
- */
 export function getInitialChoiceTemplate(errorMessage: string): string {
   const formattedError = formatLLMResponse(errorMessage);
   return `<!DOCTYPE html>
@@ -475,9 +453,6 @@ export function getInitialChoiceTemplate(errorMessage: string): string {
     </html>`;
 }
 
-/**
- * Returns HTML for combined explanation and feedback.
- */
 export function getCombinedExplanationTemplate(
   explanation: string,
   feedback: string
