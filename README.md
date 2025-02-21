@@ -1,6 +1,6 @@
-# LearnCode AI
+# Episteme
 
-LearnCode AI is a Visual Studio Code extension that integrates interactive, inline assistance for coding decisions using a language model. The extension displays quizzes and follow-up questions in a side panel to help you understand and fix code issues interactively.
+Episteme is a Visual Studio Code extension that integrates interactive, inline assistance for coding decisions using a language model. The extension displays quizzes and follow-up questions in a side panel to help you understand and fix code issues interactively. The idea is to prevent or discourage blind copying from LLM responses, useful in an educational setup
 
 ## Features
 
