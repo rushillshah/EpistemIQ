@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import {
   optionsPrompt,
-  followupQuestionPrompt,
   fixPrompt,
   snippetPrompt,
   quizPrompt,
