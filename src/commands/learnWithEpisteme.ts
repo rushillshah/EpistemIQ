@@ -1,104 +1,122 @@
 import * as vscode from 'vscode';
+
 import {
   queryLLMForOptions,
   queryLLMForFixSuggestion,
-  queryLLMForFollowupQuestions,
+  queryLLMForQuizFeedback,
 } from '../utils/queryHelpers';
 import {
-  EXPLANATION_TEMPLATE, // New template for explanation-only feedback.
+  getCombinedExplanationTemplate,
   buildQuizHtml,
-  buildFollowupHtml,
-  showLoadingState,
+  getInitialChoiceTemplate,
 } from '../utils/templates';
 
-/**
- * Helper: Wait for a selection from the webview panel.
- */
-function waitForSelection(
-  panel: vscode.WebviewPanel
-): Promise<number | undefined> {
+function waitForMessage(
+  panel: vscode.WebviewPanel,
+  expectedType: string
+): Promise<any> {
   return new Promise((resolve) => {
     const subscription = panel.webview.onDidReceiveMessage((message) => {
-      if (message.type === 'optionSelected') {
-        resolve(message.index);
+      if (message.type === expectedType) {
+        resolve(message);
         subscription.dispose();
-      } else if (message.type === 'closePanel') {
-        resolve(undefined);
-        subscription.dispose();
-        panel.dispose();
       }
     });
   });
 }
 
-/**
- * Main interactive workflow for the diagnostic quiz.
- * Instead of applying a fix, the flow now provides feedback and an explanation.
- */
 export async function learnWithEpisteme(
   document: vscode.TextDocument,
   diagnostic: vscode.Diagnostic
 ): Promise<void> {
   const panel = vscode.window.createWebviewPanel(
-    'debugnWithEpistemeQuiz',
-    'Debug with Episteme Quiz',
+    'learnWithEpistemeQuiz',
+    'Learn with Episteme',
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
 
-  let mainOptions = await queryLLMForOptions(diagnostic);
-  if (mainOptions.length === 0) {
+  panel.webview.html = getInitialChoiceTemplate(diagnostic.message);
+
+  const message = await waitForMessage(panel, 'choiceSelected');
+  const choice = message.choice;
+  console.log('User selected:', choice);
+
+  if (choice === 'understand') {
+    const explanation = await queryLLMForFixSuggestion(diagnostic, document);
+    panel.webview.html = getCombinedExplanationTemplate(explanation, '');
+    await waitForMessage(panel, 'closePanel');
     panel.dispose();
     return;
-  }
-
-  while (true) {
-    // Show the main quiz (focused on the diagnostic error).
-    panel.webview.html = buildQuizHtml(
-      mainOptions.map((opt) => ({
-        label: opt.label,
-        isCorrect: opt.isCorrect,
-      })),
-      diagnostic.message
-    );
-    const mainSelection = await waitForSelection(panel);
-    if (mainSelection === undefined) {
+  } else if (choice === 'quiz') {
+    let mainOptions = await queryLLMForOptions(diagnostic);
+    if (mainOptions.length === 0) {
       panel.dispose();
       return;
     }
+    let currentQuestionIndex = 0;
+    let correctCount = 0;
+    const totalQuestions = mainOptions.length;
+    const responses: {
+      question: string;
+      selectedOption: string;
+      correct: boolean;
+    }[] = [];
 
-    if (mainOptions[mainSelection].isCorrect) {
-      // Correct answer: Instead of applying a patch, we ask the LLM for an explanation.
-      const fixExplanation = await queryLLMForFixSuggestion(diagnostic, document);
-      // Display the explanation (educational feedback) in the side panel.
-      panel.webview.html = EXPLANATION_TEMPLATE(fixExplanation);
-      // Optionally, you can wait for a user action (like "Close") here.
-      setTimeout(() => panel.dispose(), 5000);
-      return;
-    } else {
-      // Incorrect answer: Show loading and then ask follow-up questions.
-      showLoadingState(panel, 'Building your personalized learning plan...');
-      let followupCorrect = false;
-      while (!followupCorrect) {
-        const followupQuestions = await queryLLMForFollowupQuestions(diagnostic);
-        if (followupQuestions.length === 0) break;
-        for (const followup of followupQuestions) {
-          panel.webview.html = buildFollowupHtml(followup);
-          const followupSelection = await waitForSelection(panel);
-          if (
-            followupSelection !== undefined &&
-            followup.options[followupSelection].isCorrect
-          ) {
-            followupCorrect = true;
-            break;
-          }
-        }
-        if (!followupCorrect) {
-          showLoadingState(panel, 'Building your personalized learning plan...');
-        }
+    async function showNextQuestion(): Promise<void> {
+      if (currentQuestionIndex >= totalQuestions) {
+        const feedback = await queryLLMForQuizFeedback(responses);
+        const explanation = await queryLLMForFixSuggestion(
+          diagnostic,
+          document
+        );
+        panel.webview.html = getCombinedExplanationTemplate(
+          explanation,
+          feedback
+        );
+        return;
       }
-      // Re-query main options (optionally, you can include context from follow-ups).
-      mainOptions = await queryLLMForOptions(diagnostic);
+      const currentQuestion = mainOptions[currentQuestionIndex] as unknown as {
+        question: string;
+        options: { label: string; isCorrect: boolean }[];
+      };
+      panel.webview.html = buildQuizHtml(
+        currentQuestion.options.map((opt) => ({
+          label: opt.label,
+          isCorrect: opt.isCorrect,
+        })),
+        currentQuestion.question
+      );
+      const selectionMsg = await waitForMessage(panel, 'optionSelected');
+      const selectedIndex =
+        typeof selectionMsg === 'object' && selectionMsg.index !== undefined
+          ? selectionMsg.index
+          : selectionMsg;
+      if (
+        selectedIndex !== undefined &&
+        currentQuestion.options[selectedIndex].isCorrect
+      ) {
+        correctCount++;
+        responses.push({
+          question: currentQuestion.question,
+          selectedOption: currentQuestion.options[selectedIndex].label,
+          correct: true,
+        });
+      } else {
+        responses.push({
+          question: currentQuestion.question,
+          selectedOption:
+            currentQuestion.options[selectedIndex]?.label || 'none',
+          correct: false,
+        });
+      }
+      currentQuestionIndex++;
+      await showNextQuestion();
     }
+
+    await showNextQuestion();
+    await waitForMessage(panel, 'closePanel');
+    panel.dispose();
+    return;
   }
 }
