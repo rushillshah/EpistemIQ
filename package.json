@@ -1,0 +1,36 @@
+{
+  "name": "learncode-ai",
+  "displayName": "LearnCode AI",
+  "description": "A VS Code extension that uses AI to guide you through coding decisions.",
+  "version": "0.0.1",
+  "main": "./out/extension.js",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "learnCodeAI.start",
+        "title": "LearnCode AI: Start"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "prettier_check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\"",
+    "prettier_fix": "prettier --write \"**/*.{js,ts,tsx,json,css,md}\""
+  },
+  "devDependencies": {
+    "@types/diff": "^7.0.1",
+    "@types/vscode": "^1.75.0",
+    "prettier": "^3.5.1",
+    "typescript": "^4.7.0"
+  },
+  "dependencies": {
+    "diff": "^7.0.0"
+  }
+}
