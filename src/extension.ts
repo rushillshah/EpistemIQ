@@ -1,35 +1,31 @@
-/**
- * Entry Point for LearnCode AI Extension
- *
- * This file is the main entry point for the LearnCode AI VS Code extension.
- * It handles activation, command registration, and registration of code action,
- * code lens, and content providers.
- */
-
 import * as vscode from 'vscode';
 import { createAssistantPanel } from './commands/assistantPanel';
 import { learnWithEpisteme } from './commands/learnWithEpisteme';
+import { understandWithEpisteme, quizWithEpisteme } from './commands/epistemeCommands';
 import { EpistemeCodeActionProvider } from './providers/codeActionsProvider';
 import { EpistemeCodeLensProvider } from './providers/codeLensProvider';
 import { registerEpistemeContentProvider } from './providers/epistemeContentProvider';
 
 export function activate(context: vscode.ExtensionContext): void {
-  vscode.window.showInformationMessage('LearnCode AI is now active!');
+  vscode.window.showInformationMessage('EpistemIQ is now active!');
 
-  const startDisposable = vscode.commands.registerCommand(
-    'learnCodeAI.start',
-    () => {
+  context.subscriptions.push(
+    vscode.commands.registerCommand('episteme.start', () => {
       createAssistantPanel(context);
-    }
+    })
   );
-  context.subscriptions.push(startDisposable);
 
-  const learnDisposable = vscode.commands.registerCommand(
-    'learnCodeAI.learnWithEpisteme',
-    learnWithEpisteme
+  context.subscriptions.push(
+    vscode.commands.registerCommand('episteme.errors', learnWithEpisteme)
   );
-  context.subscriptions.push(learnDisposable);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('episteme.understand', understandWithEpisteme)
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('episteme.quiz', quizWithEpisteme)
+  );
 
+  // Register Code Actions Provider so quick fixes appear (e.g., in the error lightbulb).
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       { scheme: 'file' },
@@ -38,6 +34,8 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
+  // Register CodeLens Provider so inline links (e.g., "Learn with Episteme" or "Quiz with Episteme")
+  // appear above lines with diagnostics.
   context.subscriptions.push(
     vscode.languages.registerCodeLensProvider(
       { scheme: 'file' },
@@ -45,6 +43,7 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
+  // Register any additional content providers.
   context.subscriptions.push(registerEpistemeContentProvider());
 }
 

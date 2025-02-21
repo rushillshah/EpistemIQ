@@ -17,8 +17,8 @@ export class EpistemeCodeLensProvider implements vscode.CodeLensProvider {
         diagnostic.range.start
       );
       const command: vscode.Command = {
-        command: 'learnCodeAI.learnWithEpisteme',
-        title: 'Learn with Episteme',
+        command: 'episteme.errors',
+        title: 'Debug with Episteme',
         arguments: [document, diagnostic],
       };
       lenses.push(new vscode.CodeLens(lensRange, command));

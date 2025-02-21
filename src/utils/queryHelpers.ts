@@ -66,13 +66,12 @@ export async function queryLLMForFixSuggestion(
   diagnostic: vscode.Diagnostic,
   document: vscode.TextDocument
 ): Promise<string> {
-  const blockSnippet = getBlockSnippet(document, diagnostic);
+  const fullFileContent = document.getText();
 
   const prompt = `Given the following code snippet:
-  ${blockSnippet}
+  ${fullFileContent}
   and the diagnostic error: "${diagnostic.message}",
-  provide the corrected code for the entire block that needs fixing.
-  Return only the corrected code (no extra commentary).`;
+  provide the corrected explanation for the entire block that needs fixing. Don't include any code block indicators, but provide plaintext code snippets, separated from the text with a line of '-'. Provide a concise, short explanation and the suggested change, depending on the user's understanding based on the quiz responses`;
 
   const data = await callLLM(prompt);
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -111,81 +110,71 @@ export async function queryLLMForFollowupQuestions(
   }
 }
 
-function getBlockSnippet(
-  document: vscode.TextDocument,
-  diagnostic: vscode.Diagnostic
-): string {
-  let startLine = diagnostic.range.start.line;
-  let endLine = diagnostic.range.end.line;
-
-  // Look upward for a block start indicator.
-  while (
-    startLine > 0 &&
-    !document.lineAt(startLine).text.match(/(%\{\s*|\{\s*)/)
-  ) {
-    startLine--;
+export async function generateSnippetExplanation(selectedCode: string, userInput: string): Promise<string> {
+    const prompt = `Below is a code snippet:
+  ---------------------
+  ${selectedCode}
+  ---------------------
+  The user indicates that the following aspects are unclear:
+  "${userInput}"
+  Please provide a detailed explanation covering:
+  - What the code does,
+  - The overall idea of the function,
+  - Its time and space complexity,
+  - Possible improvements.
+  Return the explanation in plain text only.`;
+    
+    const data = await callLLM(prompt);
+    const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text || "No explanation provided.";
+    return explanation;
   }
-  // Look downward for a block end indicator.
-  while (
-    endLine < document.lineCount - 1 &&
-    !document.lineAt(endLine).text.includes('}')
-  ) {
-    endLine++;
-  }
-
-  let snippet = '';
-  for (let i = startLine; i <= endLine; i++) {
-    snippet += document.lineAt(i).text + '\n';
-  }
-  return snippet.trim();
-}
-
-export function getBlockSnippetRange(
-  document: vscode.TextDocument,
-  diagnostic: vscode.Diagnostic
-): vscode.Range {
-  let startLine = diagnostic.range.start.line;
-  let endLine = diagnostic.range.end.line;
-
-  while (
-    startLine > 0 &&
-    !document.lineAt(startLine).text.match(/(%\{\s*|\{\s*)/)
-  ) {
-    startLine--;
-  }
-  while (
-    endLine < document.lineCount - 1 &&
-    !document.lineAt(endLine).text.includes('}')
-  ) {
-    endLine++;
-  }
-
-  return new vscode.Range(
-    startLine,
-    0,
-    endLine,
-    document.lineAt(endLine).range.end.character
-  );
-}
-
-export async function applyMinimalPatch(
-  document: vscode.TextDocument,
-  blockRange: vscode.Range,
-  fixedBlock: string
-): Promise<boolean> {
-  const originalBlock = document.getText(blockRange);
-  // Compute a line-by-line diff.
-  const diff = Diff.diffLines(originalBlock, fixedBlock);
-
-  // Reconstruct the new block using unchanged and added parts.
-  let patchedBlock = '';
-  diff.forEach((part) => {
-    if (!part.removed) {
-      patchedBlock += part.value;
+  
+export async function generateQuizQuestions(selectedCode: string, focus: string): Promise<any[]> {
+    const prompt = `Below is a code snippet:
+  ---------------------
+  ${selectedCode}
+  ---------------------
+  Based on the code above, generate 5 to 7 unique quiz questions that test understanding.
+  Each question must include multiple-choice answers.
+  Focus on ${focus}.
+  Return the questions as a JSON array in the following format:
+  [
+    {
+      "question": "Question text",
+      "options": [
+        {"label": "Option 1", "isCorrect": false},
+        {"label": "Option 2", "isCorrect": true},
+        {"label": "Option 3", "isCorrect": false},
+        {"label": "Option 4", "isCorrect": false}
+      ]
+    },
+    ...
+  ]
+  `;
+    const data = await callLLM(prompt);
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    try {
+      return JSON.parse(cleanJSONResponse(candidateText));
+    } catch (e) {
+      vscode.window.showErrorMessage("Failed to parse quiz questions.");
+      return [];
     }
-  });
+  }
 
-  const edit = new vscode.WorkspaceEdit();
-  edit.replace(document.uri, blockRange, patchedBlock.trim());
-  return await vscode.workspace.applyEdit(edit);
-}
+  export async function generateQuizFeedback(responses: { question: string; selectedOption: string; correct: boolean }[]): Promise<string> {
+    const responsesText = responses.map((r, idx) =>
+      `Q${idx + 1}: ${r.question}\nYour answer: ${r.selectedOption} (${r.correct ? "Correct" : "Incorrect"})`
+    ).join('\n\n');
+  
+    const prompt = `Below are a student's responses to a quiz:
+    ---------------------
+    ${responsesText}
+    ---------------------
+    Please provide a detailed analysis of the student's understanding of the code.
+    Highlight key areas where the student is struggling and suggest improvements.
+    Return your feedback in plain text, keep it short and target concrete points instead of waxing on in explanation. At the end, provide a summary, and a line or two about what they should work on next, with directions to articles and documentation relevant to that area`;
+    
+        const data = await callLLM(prompt);
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    return candidateText || "No feedback provided.";
+  }

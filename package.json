@@ -7,18 +7,42 @@
   "engines": {
     "vscode": "^1.75.0"
   },
-  "activationEvents": [
-    "*"
-  ],
-  "contributes": {
-    "commands": [
-      {
-        "command": "learnCodeAI.start",
-        "title": "LearnCode AI: Start"
+    "activationEvents": [
+      "onCommand:episteme.understand",
+      "onCommand:episteme.quiz",
+      "onCommand:episteme.errors"
+    ],
+    "contributes": {
+      "commands": [
+        {
+          "command": "episteme.understand",
+          "title": "Understand with Episteme"
+        },
+        {
+          "command": "episteme.quiz",
+          "title": "Quiz with Episteme"
+        },
+        {
+          "command": "episteme.errors",
+          "title": "Debug with Episteme"
+        }
+      ],
+      "menus": {
+        "editor/context": [
+          {
+            "command": "episteme.understand",
+            "when": "editorHasSelection",
+            "group": "navigation"
+          },
+          {
+            "command": "episteme.quiz",
+            "when": "editorHasSelection",
+            "group": "navigation"
+          }
+        ]
       }
-    ]
-  },
-  "scripts": {
+    },
+    "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
     "prettier_check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\"",

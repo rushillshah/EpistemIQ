@@ -3,25 +3,17 @@ import {
   queryLLMForOptions,
   queryLLMForFixSuggestion,
   queryLLMForFollowupQuestions,
-  getBlockSnippetRange,
-  applyMinimalPatch,
 } from '../utils/queryHelpers';
 import {
-  LOADING_TEMPLATE,
-  FIX_SUGGESTION_TEMPLATE,
-  SUCCESS_TEMPLATE,
-  REJECT_TEMPLATE,
+  EXPLANATION_TEMPLATE, // New template for explanation-only feedback.
   buildQuizHtml,
   buildFollowupHtml,
   showLoadingState,
 } from '../utils/templates';
 
 /**
- * Updates the panel with a loading state.
- * @param panel The webview panel.
- * @param message The loading message.
+ * Helper: Wait for a selection from the webview panel.
  */
-
 function waitForSelection(
   panel: vscode.WebviewPanel
 ): Promise<number | undefined> {
@@ -30,24 +22,26 @@ function waitForSelection(
       if (message.type === 'optionSelected') {
         resolve(message.index);
         subscription.dispose();
+      } else if (message.type === 'closePanel') {
+        resolve(undefined);
+        subscription.dispose();
+        panel.dispose();
       }
     });
   });
 }
 
 /**
- * Interactive workflow using a single webview panel.
- * - Displays the main question and waits for the user’s selection.
- * - If incorrect, repeatedly asks follow-up questions until one is answered correctly.
- * - After a correct follow-up answer, re-queries the main question (optionally with additional context).
+ * Main interactive workflow for the diagnostic quiz.
+ * Instead of applying a fix, the flow now provides feedback and an explanation.
  */
 export async function learnWithEpisteme(
   document: vscode.TextDocument,
   diagnostic: vscode.Diagnostic
 ): Promise<void> {
   const panel = vscode.window.createWebviewPanel(
-    'learnWithEpistemeQuiz',
-    'Learn with Episteme Quiz',
+    'debugnWithEpistemeQuiz',
+    'Debug with Episteme Quiz',
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
@@ -59,6 +53,7 @@ export async function learnWithEpisteme(
   }
 
   while (true) {
+    // Show the main quiz (focused on the diagnostic error).
     panel.webview.html = buildQuizHtml(
       mainOptions.map((opt) => ({
         label: opt.label,
@@ -73,36 +68,20 @@ export async function learnWithEpisteme(
     }
 
     if (mainOptions[mainSelection].isCorrect) {
-      const fixSuggestion = await queryLLMForFixSuggestion(
-        diagnostic,
-        document
-      );
-      panel.webview.html = FIX_SUGGESTION_TEMPLATE(fixSuggestion);
-
-      const fixChoice = await waitForSelection(panel);
-      if (fixChoice === 0) {
-        const blockRange = getBlockSnippetRange(document, diagnostic);
-        const success = await applyMinimalPatch(
-          document,
-          blockRange,
-          fixSuggestion
-        );
-        panel.webview.html = SUCCESS_TEMPLATE;
-      } else {
-        panel.webview.html = REJECT_TEMPLATE;
-      }
-      setTimeout(() => panel.dispose(), 3000);
+      // Correct answer: Instead of applying a patch, we ask the LLM for an explanation.
+      const fixExplanation = await queryLLMForFixSuggestion(diagnostic, document);
+      // Display the explanation (educational feedback) in the side panel.
+      panel.webview.html = EXPLANATION_TEMPLATE(fixExplanation);
+      // Optionally, you can wait for a user action (like "Close") here.
+      setTimeout(() => panel.dispose(), 5000);
       return;
     } else {
+      // Incorrect answer: Show loading and then ask follow-up questions.
       showLoadingState(panel, 'Building your personalized learning plan...');
-
       let followupCorrect = false;
       while (!followupCorrect) {
-        const followupQuestions =
-          await queryLLMForFollowupQuestions(diagnostic);
-        if (followupQuestions.length === 0) {
-          break;
-        }
+        const followupQuestions = await queryLLMForFollowupQuestions(diagnostic);
+        if (followupQuestions.length === 0) break;
         for (const followup of followupQuestions) {
           panel.webview.html = buildFollowupHtml(followup);
           const followupSelection = await waitForSelection(panel);
@@ -115,12 +94,10 @@ export async function learnWithEpisteme(
           }
         }
         if (!followupCorrect) {
-          showLoadingState(
-            panel,
-            'Building your personalized learning plan...'
-          );
+          showLoadingState(panel, 'Building your personalized learning plan...');
         }
       }
+      // Re-query main options (optionally, you can include context from follow-ups).
       mainOptions = await queryLLMForOptions(diagnostic);
     }
   }
