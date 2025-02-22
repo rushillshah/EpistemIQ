@@ -15,3 +15,16 @@ type FixSuggestion = {
   startLine: number;
   endLine: number;
 };
+
+type QuizResponses = {
+  question: string;
+  selectedOption: string;
+  correct: boolean;
+}[];
+
+type QuizQuestion = {
+  question: string;
+  options: { label: string; isCorrect: boolean }[];
+};
+
+type QuizQuestions = QuizQuestion[];

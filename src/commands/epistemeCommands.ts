@@ -113,7 +113,6 @@ export async function quizWithEpisteme(): Promise<void> {
     { enableScripts: true }
   );
 
-  // Step 1: Show quiz focus input.
   panel.webview.html = getQuizFocusHTML(selectedCode);
   const focus = await waitForQuizFocus(panel);
   if (!focus) {
@@ -121,7 +120,6 @@ export async function quizWithEpisteme(): Promise<void> {
     return;
   }
 
-  // Step 2: Generate quiz questions using the selected code and focus.
   const questions = await generateQuizQuestions(selectedCode, focus);
   if (!questions || questions.length === 0) {
     panel.dispose();
@@ -137,39 +135,15 @@ export async function quizWithEpisteme(): Promise<void> {
     correct: boolean;
   }[] = [];
 
-  async function showNextQuestion(): Promise<void> {
-    if (currentQuestionIndex >= totalQuestions) {
-      // Quiz finished: generate initial feedback.
-      const feedback = await generateQuizFeedback(responses);
-      panel.webview.html = getQuizFeedbackHTML(feedback);
-      // Now the panel shows an input for follow-up questions.
-      return;
-    }
-    const currentQuestion = questions[currentQuestionIndex] as {
-      question: string;
-      options: { label: string; isCorrect: boolean }[];
-    };
-    panel.webview.html = getQuizQuestionHTML(currentQuestion);
-    const selection = await waitForSelection(panel);
-    if (selection !== undefined) {
-      const selectedOption = currentQuestion.options[selection].label;
-      const isCorrect = currentQuestion.options[selection].isCorrect;
-      responses.push({
-        question: currentQuestion.question,
-        selectedOption,
-        correct: isCorrect,
-      });
-      if (isCorrect) {
-        correctCount++;
-      }
-    }
-    currentQuestionIndex++;
-    await showNextQuestion();
-  }
+  await showNextQuestion(
+    panel,
+    responses,
+    questions,
+    currentQuestionIndex,
+    totalQuestions,
+    correctCount
+  );
 
-  await showNextQuestion();
-
-  // Handle follow-up queries for quiz feedback.
   panel.webview.onDidReceiveMessage(async (message) => {
     if (message.type === 'submitQuizFollowup') {
       const followupInput = message.input;
@@ -183,4 +157,46 @@ export async function quizWithEpisteme(): Promise<void> {
       panel.dispose();
     }
   });
+}
+
+async function showNextQuestion(
+  panel: vscode.WebviewPanel,
+  responses: QuizResponses,
+  questions: QuizQuestions,
+  currentQuestionIndex: number,
+  totalQuestions: number,
+  correctCount: number
+): Promise<void> {
+  if (currentQuestionIndex >= totalQuestions) {
+    const feedback = await generateQuizFeedback(responses);
+    panel.webview.html = getQuizFeedbackHTML(feedback);
+    return;
+  }
+  const currentQuestion = questions[currentQuestionIndex] as {
+    question: string;
+    options: { label: string; isCorrect: boolean }[];
+  };
+  panel.webview.html = getQuizQuestionHTML(currentQuestion);
+  const selection = await waitForSelection(panel);
+  if (selection !== undefined) {
+    const selectedOption = currentQuestion.options[selection].label;
+    const isCorrect = currentQuestion.options[selection].isCorrect;
+    responses.push({
+      question: currentQuestion.question,
+      selectedOption,
+      correct: isCorrect,
+    });
+    if (isCorrect) {
+      correctCount++;
+    }
+  }
+  currentQuestionIndex++;
+  await showNextQuestion(
+    panel,
+    responses,
+    questions,
+    currentQuestionIndex,
+    totalQuestions,
+    correctCount
+  );
 }

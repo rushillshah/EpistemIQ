@@ -120,7 +120,7 @@ export async function generateSnippetExplanation(
 export async function generateQuizQuestions(
   selectedCode: string,
   focus: string
-): Promise<any[]> {
+): Promise<QuizQuestions> {
   const prompt = quizPrompt(selectedCode, focus);
   const data = await callLLM(prompt);
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';

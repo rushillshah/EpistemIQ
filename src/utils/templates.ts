@@ -1,3 +1,4 @@
+import { feedbackPrompt } from './prompts';
 import { formatLLMResponse } from './uiHelpers';
 
 export function buildQuizHtml(
@@ -84,11 +85,9 @@ export function buildQuizHtml(
               .join('')}
           </div>
           <script>
-            // Render the diagnostic markdown as HTML
             document.getElementById("diagnostic").innerHTML = marked.parse(\`${formattedDiagnostic.replace(/`/g, '\\`')}\`);
             const vscode = acquireVsCodeApi();
             function selectOption(index) {
-              // Immediately update the options container with a loading message.
               document.getElementById("options").innerHTML = '<p>Evaluating your response...</p>';
               vscode.postMessage({ type: 'optionSelected', index });
             }
@@ -154,7 +153,6 @@ export function getUnderstandInputHTML(code: string): string {
         <br/>
         <button onclick="submit()">Submit</button>
         <script>
-          // Render the selected code using marked
           document.getElementById("codeBlock").innerHTML = marked.parse(\`${formattedCode.replace(/`/g, '\\`')}\`);
           const vscode = acquireVsCodeApi();
           function submit() {
@@ -564,7 +562,6 @@ export function getCombinedExplanationTemplate(
       <button onclick="submitFollowup()">Submit Follow-up</button>
       <button onclick="closePanel()">Close</button>
       <script>
-        // Render the explanation and, if provided, the feedback using marked.
         document.getElementById("explanationBlock").innerHTML = marked.parse(\`${formattedExplanation.replace(/`/g, '\\`')}\`);
         ${
           formattedFeedback
@@ -663,7 +660,7 @@ export function getUnderstandResultWithFollowupHTML(
 }
 
 export function getQuizFollowupHTML(followupFeedback: string): string {
-  const formattedFeedback = followupFeedback; // Optionally, process with formatLLMResponse
+  const formattedFeedback = formatLLMResponse(followupFeedback);
   return `<!DOCTYPE html>
   <html>
     <head>
