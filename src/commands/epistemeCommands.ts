@@ -4,16 +4,21 @@ import {
   generateQuizFeedback,
   generateQuizQuestions,
   generateSnippetExplanation,
+  summarizeCode,
+  generateQuizFollowupFeedback,
 } from '../utils/queryHelpers';
 import {
   getQuizFeedbackHTML,
   getUnderstandInputHTML,
-  getUnderstandResultHTML,
+  getUnderstandResultWithFollowupHTML,
   getQuizQuestionHTML,
   getQuizFocusHTML,
 } from '../utils/templates';
 
-export async function understandWithEpisteme(): Promise<void> {
+export async function understandWithEpisteme(
+  document: vscode.TextDocument,
+  diagnostic: vscode.Diagnostic
+): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
     vscode.window.showInformationMessage(
@@ -22,6 +27,14 @@ export async function understandWithEpisteme(): Promise<void> {
     return;
   }
   const selectedCode = editor.document.getText(editor.selection);
+  if (!selectedCode) {
+    vscode.window.showInformationMessage(
+      'Please select some code to understand.'
+    );
+    return;
+  }
+
+  const codeSummary = await summarizeCode(selectedCode);
 
   const panel = vscode.window.createWebviewPanel(
     'epistemeUnderstand',
@@ -32,20 +45,33 @@ export async function understandWithEpisteme(): Promise<void> {
 
   panel.webview.html = getUnderstandInputHTML(selectedCode);
 
+  let currentExplanation = '';
   panel.webview.onDidReceiveMessage(async (message) => {
     if (message.type === 'submitUnderstanding') {
       const userInput = message.input;
       const explanation = await generateSnippetExplanation(
         selectedCode,
-        userInput
+        userInput,
+        false
       );
-      panel.webview.html = getUnderstandResultHTML(explanation);
+      currentExplanation = explanation;
+      panel.webview.html = getUnderstandResultWithFollowupHTML(explanation);
+    } else if (message.type === 'submitFollowup') {
+      const followupInput = message.input;
+      const newExplanation = await generateSnippetExplanation(
+        selectedCode,
+        followupInput,
+        true,
+        currentExplanation,
+        codeSummary
+      );
+      currentExplanation = newExplanation;
+      panel.webview.html = getUnderstandResultWithFollowupHTML(newExplanation);
     } else if (message.type === 'closePanel') {
       panel.dispose();
     }
   });
 }
-
 function waitForQuizFocus(
   panel: vscode.WebviewPanel
 ): Promise<string | undefined> {
@@ -109,36 +135,68 @@ export async function quizWithEpisteme(): Promise<void> {
     correct: boolean;
   }[] = [];
 
-  async function showNextQuestion(): Promise<void> {
-    if (currentQuestionIndex >= totalQuestions) {
-      const feedback = await generateQuizFeedback(responses);
-      panel.webview.html = getQuizFeedbackHTML(feedback);
-      return;
-    }
-    const currentQuestion = questions[currentQuestionIndex];
-    panel.webview.html = getQuizQuestionHTML(currentQuestion);
-    const selection = await waitForSelection(panel);
-    if (selection !== undefined) {
-      const selectedOption = currentQuestion.options[selection].label;
-      const isCorrect = currentQuestion.options[selection].isCorrect;
-      responses.push({
-        question: currentQuestion.question,
-        selectedOption,
-        correct: isCorrect,
-      });
-      if (isCorrect) {
-        correctCount++;
-      }
-    }
-    currentQuestionIndex++;
-    await showNextQuestion();
-  }
+  await showNextQuestion(
+    panel,
+    responses,
+    questions,
+    currentQuestionIndex,
+    totalQuestions,
+    correctCount
+  );
 
-  await showNextQuestion();
-
-  panel.webview.onDidReceiveMessage((message) => {
-    if (message.type === 'closePanel') {
+  panel.webview.onDidReceiveMessage(async (message) => {
+    if (message.type === 'submitQuizFollowup') {
+      const followupInput = message.input;
+      const newFeedback = await generateQuizFollowupFeedback(
+        responses,
+        followupInput,
+        selectedCode
+      );
+      panel.webview.html = getQuizFeedbackHTML(newFeedback);
+    } else if (message.type === 'closePanel') {
       panel.dispose();
     }
   });
+}
+
+async function showNextQuestion(
+  panel: vscode.WebviewPanel,
+  responses: QuizResponses,
+  questions: QuizQuestions,
+  currentQuestionIndex: number,
+  totalQuestions: number,
+  correctCount: number
+): Promise<void> {
+  if (currentQuestionIndex >= totalQuestions) {
+    const feedback = await generateQuizFeedback(responses);
+    panel.webview.html = getQuizFeedbackHTML(feedback);
+    return;
+  }
+  const currentQuestion = questions[currentQuestionIndex] as {
+    question: string;
+    options: { label: string; isCorrect: boolean }[];
+  };
+  panel.webview.html = getQuizQuestionHTML(currentQuestion);
+  const selection = await waitForSelection(panel);
+  if (selection !== undefined) {
+    const selectedOption = currentQuestion.options[selection].label;
+    const isCorrect = currentQuestion.options[selection].isCorrect;
+    responses.push({
+      question: currentQuestion.question,
+      selectedOption,
+      correct: isCorrect,
+    });
+    if (isCorrect) {
+      correctCount++;
+    }
+  }
+  currentQuestionIndex++;
+  await showNextQuestion(
+    panel,
+    responses,
+    questions,
+    currentQuestionIndex,
+    totalQuestions,
+    correctCount
+  );
 }

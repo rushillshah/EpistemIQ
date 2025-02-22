@@ -1,3 +1,4 @@
+import { feedbackPrompt } from './prompts';
 import { formatLLMResponse } from './uiHelpers';
 
 export function buildQuizHtml(
@@ -84,11 +85,9 @@ export function buildQuizHtml(
               .join('')}
           </div>
           <script>
-            // Render the diagnostic markdown as HTML
             document.getElementById("diagnostic").innerHTML = marked.parse(\`${formattedDiagnostic.replace(/`/g, '\\`')}\`);
             const vscode = acquireVsCodeApi();
             function selectOption(index) {
-              // Immediately update the options container with a loading message.
               document.getElementById("options").innerHTML = '<p>Evaluating your response...</p>';
               vscode.postMessage({ type: 'optionSelected', index });
             }
@@ -154,7 +153,6 @@ export function getUnderstandInputHTML(code: string): string {
         <br/>
         <button onclick="submit()">Submit</button>
         <script>
-          // Render the selected code using marked
           document.getElementById("codeBlock").innerHTML = marked.parse(\`${formattedCode.replace(/`/g, '\\`')}\`);
           const vscode = acquireVsCodeApi();
           function submit() {
@@ -353,52 +351,77 @@ export function getQuizQuestionHTML(questionObj: {
 export function getQuizFeedbackHTML(feedback: string): string {
   const formattedFeedback = formatLLMResponse(feedback);
   return `<!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <!-- Load marked.js -->
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-        <style>
-          body {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: "Segoe UI", sans-serif;
-            padding: 16px;
-            text-align: center;
-          }
-          pre {
-            background-color: #252526;
-            padding: 8px;
-            border-radius: 4px;
-            font-family: Consolas, monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            margin-bottom: 16px;
-          }
-          button {
-            padding: 6px 12px;
-            font-size: 12px;
-            background-color: #0e639c;
-            color: #ffffff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 16px;
-          }
-          button:hover { background-color: #1177bb; }
-        </style>
-      </head>
-      <body>
-        <h3>Quiz Feedback</h3>
-        <pre id="feedbackBlock"></pre>
-        <button onclick="closePanel()">Close</button>
-        <script>
-          document.getElementById("feedbackBlock").innerHTML = marked.parse(\`${formattedFeedback.replace(/`/g, '\\`')}\`);
-          const vscode = acquireVsCodeApi();
-          function closePanel() { vscode.postMessage({ type: 'closePanel' }); }
-        </script>
-      </body>
-    </html>`;
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d4d4d4;
+          font-family: "Segoe UI", sans-serif;
+          padding: 16px;
+          text-align: left;
+        }
+        h3 {
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+        .content {
+          background-color: #252526;
+          padding: 8px;
+          border-radius: 4px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+          margin-bottom: 16px;
+        }
+        textarea {
+          width: 100%;
+          height: 80px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          margin-bottom: 8px;
+          border-radius: 4px;
+          border: 1px solid #333;
+          background-color: #252526;
+          color: #d4d4d4;
+          padding: 8px;
+        }
+        button {
+          padding: 6px 12px;
+          font-size: 12px;
+          background-color: #0e639c;
+          color: #ffffff;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          margin-right: 8px;
+        }
+        button:hover { background-color: #1177bb; }
+      </style>
+    </head>
+    <body>
+      <h3>Quiz Feedback</h3>
+      <div class="content" id="feedbackBlock"></div>
+      <h3>Ask a follow-up question (optional):</h3>
+      <textarea id="followupInput" placeholder="Type your follow-up question..."></textarea>
+      <br/>
+      <button onclick="submitFollowup()">Submit Follow-up</button>
+      <button onclick="closePanel()">Close</button>
+      <script>
+        document.getElementById("feedbackBlock").innerHTML = marked.parse(\`${formattedFeedback.replace(/`/g, '\\`')}\`);
+        const vscode = acquireVsCodeApi();
+        function submitFollowup() {
+          const input = document.getElementById('followupInput').value;
+          vscode.postMessage({ type: 'submitQuizFollowup', input });
+        }
+        function closePanel() {
+          vscode.postMessage({ type: 'closePanel' });
+        }
+      </script>
+    </body>
+  </html>`;
 }
 
 export function getInitialChoiceTemplate(errorMessage: string): string {
@@ -455,76 +478,256 @@ export function getInitialChoiceTemplate(errorMessage: string): string {
 
 export function getCombinedExplanationTemplate(
   explanation: string,
-  feedback: string
+  feedback: string,
+  followupType: string = 'submitFollowup'
 ): string {
   const formattedExplanation = formatLLMResponse(explanation);
   const formattedFeedback = formatLLMResponse(feedback);
   return `<!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <!-- Load marked.js -->
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-        <style>
-          body {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: "Segoe UI", sans-serif;
-            padding: 16px;
-          }
-          .section {
-            margin-bottom: 16px;
-          }
-          .section-title {
-            font-size: 16px;
-            margin-bottom: 8px;
-          }
-          .section-content {
-            background-color: #252526;
-            padding: 8px;
-            border-radius: 4px;
-            font-family: Consolas, monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-          }
-          .divider {
-            border-top: 2px solid #444;
-            margin: 16px 0;
-          }
-          button {
-            padding: 6px 12px;
-            font-size: 12px;
-            background-color: #0e639c;
-            color: #ffffff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 16px;
-          }
-          button:hover {
-            background-color: #1177bb;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="section">
-          <div class="section-title">Explanation of the Issue</div>
-          <div class="section-content" id="explanation"></div>
-        </div>
-        <div class="divider"></div>
-        <div class="section">
-          <div class="section-title">Feedback on Your Understanding</div>
-          <div class="section-content" id="feedback"></div>
-        </div>
-        <button onclick="closePanel()">Close</button>
-        <script>
-          document.getElementById("explanation").innerHTML = marked.parse(\`${formattedExplanation.replace(/`/g, '\\`')}\`);
-          document.getElementById("feedback").innerHTML = marked.parse(\`${formattedFeedback.replace(/`/g, '\\`')}\`);
-          const vscode = acquireVsCodeApi();
-          function closePanel() {
-            vscode.postMessage({ type: 'closePanel' });
-          }
-        </script>
-      </body>
-    </html>`;
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d4d4d4;
+          font-family: "Segoe UI", sans-serif;
+          padding: 16px;
+          text-align: left;
+        }
+        .section {
+          margin-bottom: 16px;
+        }
+        .section-title {
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+        .section-content {
+          background-color: #252526;
+          padding: 8px;
+          border-radius: 4px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+        }
+        .divider {
+          border-top: 2px solid #444;
+          margin: 16px 0;
+        }
+        textarea {
+          width: 100%;
+          height: 80px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          margin-bottom: 8px;
+          border-radius: 4px;
+          border: 1px solid #333;
+          background-color: #252526;
+          color: #d4d4d4;
+          padding: 8px;
+        }
+        button {
+          padding: 6px 12px;
+          font-size: 12px;
+          background-color: #0e639c;
+          color: #ffffff;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          margin-right: 8px;
+        }
+        button:hover { background-color: #1177bb; }
+      </style>
+    </head>
+    <body>
+      <div class="section">
+        <div class="section-title">Explanation of the Issue</div>
+        <div class="section-content" id="explanationBlock"></div>
+      </div>
+      ${
+        formattedFeedback
+          ? `
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-title">Feedback on Your Understanding</div>
+        <div class="section-content" id="feedbackBlock"></div>
+      </div>
+      `
+          : ''
+      }
+      <h3>Follow-up Question (optional)</h3>
+      <textarea id="followupInput" placeholder="Type your follow-up question..."></textarea>
+      <br/>
+      <button onclick="submitFollowup()">Submit Follow-up</button>
+      <button onclick="closePanel()">Close</button>
+      <script>
+        document.getElementById("explanationBlock").innerHTML = marked.parse(\`${formattedExplanation.replace(/`/g, '\\`')}\`);
+        ${
+          formattedFeedback
+            ? 'document.getElementById("feedbackBlock").innerHTML = marked.parse(`' +
+              formattedFeedback.replace(/`/g, '\\`') +
+              '`);'
+            : ''
+        }
+        const vscode = acquireVsCodeApi();
+        function submitFollowup() {
+          const input = document.getElementById("followupInput").value;
+          vscode.postMessage({ type: '${followupType}', input: input });
+        }
+        function closePanel() {
+          vscode.postMessage({ type: 'closePanel' });
+        }
+      </script>
+    </body>
+  </html>`;
+}
+
+export function getUnderstandResultWithFollowupHTML(
+  explanation: string
+): string {
+  const formattedExplanation = formatLLMResponse(explanation);
+  return `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <!-- Optionally, load a markdown parser if you want to render markdown -->
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <style>
+        body { 
+          background-color: #1e1e1e; 
+          color: #d4d4d4; 
+          font-family: "Segoe UI", sans-serif; 
+          padding: 16px; 
+          text-align: left;
+        }
+        h3 { font-size: 16px; margin-bottom: 8px; }
+        .content { 
+          background-color: #252526; 
+          padding: 8px; 
+          border-radius: 4px; 
+          font-family: Consolas, monospace; 
+          font-size: 12px; 
+          white-space: pre-wrap; 
+          margin-bottom: 16px;
+        }
+        textarea { 
+          width: 100%; 
+          height: 80px; 
+          font-family: Consolas, monospace; 
+          font-size: 12px; 
+          margin-bottom: 8px; 
+          border-radius: 4px; 
+          border: 1px solid #333; 
+          background-color: #252526;
+          color: #d4d4d4;
+          padding: 8px;
+        }
+        button { 
+          padding: 6px 12px; 
+          font-size: 12px; 
+          background-color: #0e639c; 
+          color: #ffffff; 
+          border: none; 
+          border-radius: 3px; 
+          cursor: pointer; 
+          margin-right: 8px;
+        }
+        button:hover { background-color: #1177bb; }
+      </style>
+    </head>
+    <body>
+      <h3>Explanation</h3>
+      <div class="content" id="explanationBlock"></div>
+      <h3>Follow-up Question (optional)</h3>
+      <textarea id="followupInput" placeholder="Type a follow-up question..."></textarea>
+      <br/>
+      <button onclick="submitFollowup()">Submit Follow-up</button>
+      <button onclick="closePanel()">Close</button>
+      <script>
+        document.getElementById("explanationBlock").innerHTML = marked.parse(\`${formattedExplanation.replace(/`/g, '\\`')}\`);
+        const vscode = acquireVsCodeApi();
+        function submitFollowup() {
+          const input = document.getElementById('followupInput').value;
+          vscode.postMessage({ type: 'submitFollowup', input });
+        }
+        function closePanel() {
+          vscode.postMessage({ type: 'closePanel' });
+        }
+      </script>
+    </body>
+  </html>`;
+}
+
+export function getQuizFollowupHTML(followupFeedback: string): string {
+  const formattedFeedback = formatLLMResponse(followupFeedback);
+  return `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d4d4d4;
+          font-family: "Segoe UI", sans-serif;
+          padding: 16px;
+          text-align: left;
+        }
+        h3 { font-size: 16px; margin-bottom: 8px; }
+        .content { 
+          background-color: #252526;
+          padding: 8px;
+          border-radius: 4px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+          margin-bottom: 16px;
+        }
+        textarea { 
+          width: 100%;
+          height: 80px;
+          font-family: Consolas, monospace;
+          font-size: 12px;
+          margin-bottom: 8px;
+          border-radius: 4px;
+          border: 1px solid #333;
+          background-color: #252526;
+          color: #d4d4d4;
+          padding: 8px;
+        }
+        button {
+          padding: 6px 12px;
+          font-size: 12px;
+          background-color: #0e639c;
+          color: #ffffff;
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          margin-right: 8px;
+        }
+        button:hover { background-color: #1177bb; }
+      </style>
+    </head>
+    <body>
+      <h3>Follow-up Feedback</h3>
+      <div class="content" id="feedbackBlock"></div>
+      <h3>Ask a follow-up question (optional):</h3>
+      <textarea id="followupInput" placeholder="Type your follow-up question..."></textarea>
+      <br/>
+      <button onclick="submitFollowup()">Submit Follow-up</button>
+      <button onclick="closePanel()">Close</button>
+      <script>
+        document.getElementById("feedbackBlock").innerHTML = marked.parse(\`${formattedFeedback.replace(/`/g, '\\`')}\`);
+        const vscode = acquireVsCodeApi();
+        function submitFollowup() {
+          const input = document.getElementById('followupInput').value;
+          vscode.postMessage({ type: 'submitQuizFollowup', input });
+        }
+        function closePanel() {
+          vscode.postMessage({ type: 'closePanel' });
+        }
+      </script>
+    </body>
+  </html>`;
 }
