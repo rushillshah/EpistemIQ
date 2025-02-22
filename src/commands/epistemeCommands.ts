@@ -13,12 +13,11 @@ import {
   getUnderstandResultWithFollowupHTML,
   getQuizQuestionHTML,
   getQuizFocusHTML,
+  getLoadingStateHTML,
 } from '../utils/templates';
+import { getRandomLoadingMessage } from '../utils/uiHelpers';
 
-export async function understandWithEpisteme(
-  document: vscode.TextDocument,
-  diagnostic: vscode.Diagnostic
-): Promise<void> {
+export async function understandWithEpisteme(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
     vscode.window.showInformationMessage(
@@ -38,7 +37,7 @@ export async function understandWithEpisteme(
 
   const panel = vscode.window.createWebviewPanel(
     'epistemeUnderstand',
-    'Understand with Episteme',
+    'Understand with EpistemIQ',
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
@@ -49,6 +48,9 @@ export async function understandWithEpisteme(
   panel.webview.onDidReceiveMessage(async (message) => {
     if (message.type === 'submitUnderstanding') {
       const userInput = message.input;
+      panel.webview.html = getLoadingStateHTML(
+        getRandomLoadingMessage('understanding')
+      );
       const explanation = await generateSnippetExplanation(
         selectedCode,
         userInput,
@@ -58,6 +60,9 @@ export async function understandWithEpisteme(
       panel.webview.html = getUnderstandResultWithFollowupHTML(explanation);
     } else if (message.type === 'submitFollowup') {
       const followupInput = message.input;
+      panel.webview.html = getLoadingStateHTML(
+        getRandomLoadingMessage('understanding')
+      );
       const newExplanation = await generateSnippetExplanation(
         selectedCode,
         followupInput,
@@ -108,7 +113,7 @@ export async function quizWithEpisteme(): Promise<void> {
 
   const panel = vscode.window.createWebviewPanel(
     'epistemeQuiz',
-    'Quiz with Episteme',
+    'Quiz with EpistemIQ',
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
@@ -119,7 +124,7 @@ export async function quizWithEpisteme(): Promise<void> {
     panel.dispose();
     return;
   }
-
+  panel.webview.html = getLoadingStateHTML(getRandomLoadingMessage('quiz'));
   const questions = await generateQuizQuestions(selectedCode, focus);
   if (!questions || questions.length === 0) {
     panel.dispose();
@@ -147,6 +152,9 @@ export async function quizWithEpisteme(): Promise<void> {
   panel.webview.onDidReceiveMessage(async (message) => {
     if (message.type === 'submitQuizFollowup') {
       const followupInput = message.input;
+      panel.webview.html = getLoadingStateHTML(
+        getRandomLoadingMessage('followup')
+      );
       const newFeedback = await generateQuizFollowupFeedback(
         responses,
         followupInput,
@@ -168,6 +176,7 @@ async function showNextQuestion(
   correctCount: number
 ): Promise<void> {
   if (currentQuestionIndex >= totalQuestions) {
+    panel.webview.html = getLoadingStateHTML('Finalizing quiz results...');
     const feedback = await generateQuizFeedback(responses);
     panel.webview.html = getQuizFeedbackHTML(feedback);
     return;

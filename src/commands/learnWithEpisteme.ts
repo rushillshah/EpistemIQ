@@ -13,7 +13,9 @@ import {
   buildQuizHtml,
   getInitialChoiceTemplate,
   getQuizFeedbackHTML,
+  getLoadingStateHTML,
 } from '../utils/templates';
+import { getRandomLoadingMessage } from '../utils/uiHelpers';
 
 function waitForMessage(
   panel: vscode.WebviewPanel,
@@ -68,6 +70,9 @@ const handleUnderstandError = async (
   panel: vscode.WebviewPanel,
   diagnosticSummary: string
 ) => {
+  panel.webview.html = getLoadingStateHTML(
+    getRandomLoadingMessage('understanding')
+  );
   let currentExplanation = await queryLLMForFixSuggestion(diagnostic, document);
   panel.webview.html = getCombinedExplanationTemplate(
     currentExplanation,
@@ -78,6 +83,9 @@ const handleUnderstandError = async (
     const followupMsg = await waitForMessage(panel, 'submitFollowup');
     if (!followupMsg || !followupMsg.input) break;
     const followupInput = followupMsg.input;
+    panel.webview.html = getLoadingStateHTML(
+      getRandomLoadingMessage('followup')
+    );
     const newExplanation = await generateSnippetExplanation(
       diagnostic.message,
       followupInput,
@@ -100,6 +108,7 @@ const handleQuizError = async (
   panel: vscode.WebviewPanel,
   document: vscode.TextDocument
 ) => {
+  panel.webview.html = getLoadingStateHTML(getRandomLoadingMessage('quiz'));
   let mainOptions = await queryLLMForOptions(diagnostic);
   if (!mainOptions || mainOptions.length === 0) {
     panel.dispose();
@@ -181,6 +190,9 @@ const handleTerminateQuiz = async (
   responses: { question: string; selectedOption: string; correct: boolean }[],
   panel: vscode.WebviewPanel
 ) => {
+  panel.webview.html = getLoadingStateHTML(
+    'Explaining and formulating feedback...'
+  );
   const feedback = await generateQuizFeedback(responses);
   const explanation = await queryLLMForFixSuggestion(diagnostic, document);
   let combined = getCombinedExplanationTemplate(
@@ -194,11 +206,15 @@ const handleTerminateQuiz = async (
     const followupMsg = await waitForMessage(panel, 'submitQuizFollowup');
     if (!followupMsg || !followupMsg.input) break;
     const followupInput = followupMsg.input;
+    panel.webview.html = getLoadingStateHTML(
+      getRandomLoadingMessage('followup')
+    );
     const newFeedback = await generateQuizFollowupFeedback(
       responses,
       followupInput,
       diagnostic.message
     );
+    panel.webview.html = getLoadingStateHTML('Finalizing quiz results...');
     panel.webview.html = getQuizFeedbackHTML(newFeedback);
   }
 };

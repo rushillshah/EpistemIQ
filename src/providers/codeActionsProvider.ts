@@ -14,12 +14,12 @@ export class EpistemeCodeActionProvider implements vscode.CodeActionProvider {
       return [];
     }
     const learnAction = new vscode.CodeAction(
-      'Debug with Episteme',
+      'Debug with EpistemIQ',
       vscode.CodeActionKind.QuickFix
     );
     learnAction.command = {
       command: 'epistemiq.errors',
-      title: 'Debug with Episteme',
+      title: 'Debug with EpistemIQ',
       arguments: [document, relevantDiagnostic],
     };
 
