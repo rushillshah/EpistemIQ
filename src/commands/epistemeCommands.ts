@@ -4,16 +4,21 @@ import {
   generateQuizFeedback,
   generateQuizQuestions,
   generateSnippetExplanation,
+  summarizeCode,
+  generateQuizFollowupFeedback,
 } from '../utils/queryHelpers';
 import {
   getQuizFeedbackHTML,
   getUnderstandInputHTML,
-  getUnderstandResultHTML,
+  getUnderstandResultWithFollowupHTML,
   getQuizQuestionHTML,
   getQuizFocusHTML,
 } from '../utils/templates';
 
-export async function understandWithEpisteme(): Promise<void> {
+export async function understandWithEpisteme(
+  document: vscode.TextDocument,
+  diagnostic: vscode.Diagnostic
+): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
     vscode.window.showInformationMessage(
@@ -22,6 +27,14 @@ export async function understandWithEpisteme(): Promise<void> {
     return;
   }
   const selectedCode = editor.document.getText(editor.selection);
+  if (!selectedCode) {
+    vscode.window.showInformationMessage(
+      'Please select some code to understand.'
+    );
+    return;
+  }
+
+  const codeSummary = await summarizeCode(selectedCode);
 
   const panel = vscode.window.createWebviewPanel(
     'epistemeUnderstand',
@@ -32,20 +45,33 @@ export async function understandWithEpisteme(): Promise<void> {
 
   panel.webview.html = getUnderstandInputHTML(selectedCode);
 
+  let currentExplanation = '';
   panel.webview.onDidReceiveMessage(async (message) => {
     if (message.type === 'submitUnderstanding') {
       const userInput = message.input;
       const explanation = await generateSnippetExplanation(
         selectedCode,
-        userInput
+        userInput,
+        false
       );
-      panel.webview.html = getUnderstandResultHTML(explanation);
+      currentExplanation = explanation;
+      panel.webview.html = getUnderstandResultWithFollowupHTML(explanation);
+    } else if (message.type === 'submitFollowup') {
+      const followupInput = message.input;
+      const newExplanation = await generateSnippetExplanation(
+        selectedCode,
+        followupInput,
+        true,
+        currentExplanation,
+        codeSummary
+      );
+      currentExplanation = newExplanation;
+      panel.webview.html = getUnderstandResultWithFollowupHTML(newExplanation);
     } else if (message.type === 'closePanel') {
       panel.dispose();
     }
   });
 }
-
 function waitForQuizFocus(
   panel: vscode.WebviewPanel
 ): Promise<string | undefined> {
@@ -87,6 +113,7 @@ export async function quizWithEpisteme(): Promise<void> {
     { enableScripts: true }
   );
 
+  // Step 1: Show quiz focus input.
   panel.webview.html = getQuizFocusHTML(selectedCode);
   const focus = await waitForQuizFocus(panel);
   if (!focus) {
@@ -94,6 +121,7 @@ export async function quizWithEpisteme(): Promise<void> {
     return;
   }
 
+  // Step 2: Generate quiz questions using the selected code and focus.
   const questions = await generateQuizQuestions(selectedCode, focus);
   if (!questions || questions.length === 0) {
     panel.dispose();
@@ -111,11 +139,16 @@ export async function quizWithEpisteme(): Promise<void> {
 
   async function showNextQuestion(): Promise<void> {
     if (currentQuestionIndex >= totalQuestions) {
+      // Quiz finished: generate initial feedback.
       const feedback = await generateQuizFeedback(responses);
       panel.webview.html = getQuizFeedbackHTML(feedback);
+      // Now the panel shows an input for follow-up questions.
       return;
     }
-    const currentQuestion = questions[currentQuestionIndex];
+    const currentQuestion = questions[currentQuestionIndex] as {
+      question: string;
+      options: { label: string; isCorrect: boolean }[];
+    };
     panel.webview.html = getQuizQuestionHTML(currentQuestion);
     const selection = await waitForSelection(panel);
     if (selection !== undefined) {
@@ -136,8 +169,17 @@ export async function quizWithEpisteme(): Promise<void> {
 
   await showNextQuestion();
 
-  panel.webview.onDidReceiveMessage((message) => {
-    if (message.type === 'closePanel') {
+  // Handle follow-up queries for quiz feedback.
+  panel.webview.onDidReceiveMessage(async (message) => {
+    if (message.type === 'submitQuizFollowup') {
+      const followupInput = message.input;
+      const newFeedback = await generateQuizFollowupFeedback(
+        responses,
+        followupInput,
+        selectedCode
+      );
+      panel.webview.html = getQuizFeedbackHTML(newFeedback);
+    } else if (message.type === 'closePanel') {
       panel.dispose();
     }
   });

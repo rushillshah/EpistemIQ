@@ -36,21 +36,31 @@ export const fixPrompt = (
   and the diagnostic error: "${diagnostic.message}",
   provide the corrected explanation for the entire block that needs fixing. A maximum of 5 lines of response, with a small code snippet on the fix. In those 5 lines, respond with the user's quiz results in mind, gauging their understanding`;
 
-export const snippetPrompt = (
+export const initialSnippetPrompt = (
   selectedCode: string,
   userInput: string
 ) => `Below is a code snippet:
   ---------------------
   ${selectedCode}
   ---------------------
-  The user indicates that the following aspects are unclear:
-  "${userInput}"
-  Please provide a detailed explanation covering:
-  - What the code does,
-  - The overall idea of the function,
-  - Its time and space complexity,
-  - Possible improvements.
-  Return the explanation in plain text only.`;
+  The user is specifically confused about: "${userInput}"
+  Please provide a concise, tailored explanation that addresses only this concern. Focus on the parts of the code relevant to "${userInput}" and avoid generic descriptions. Return only plain text.`;
+
+export const followupSnippetPrompt = (
+  followupInput: string,
+  codeSummary: string,
+  previousContext: string
+) => `Below is a brief summary of the original code:
+  ---------------------
+  ${codeSummary}
+  ---------------------
+  The previous explanation was:
+  ---------------------
+  ${previousContext}
+  ---------------------
+  Now, the user asks a follow-up: "${followupInput}"
+  Please provide further clarification and insights, building on the above summary.
+  Return only plain text.`;
 
 export const quizPrompt = (
   selectedCode: string,
