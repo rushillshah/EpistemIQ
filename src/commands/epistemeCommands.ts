@@ -131,8 +131,8 @@ export async function quizWithEpisteme(): Promise<void> {
     return;
   }
 
-  let currentQuestionIndex = 0;
-  let correctCount = 0;
+  const currentQuestionIndex = 0;
+  const correctCount = 0;
   const totalQuestions = questions.length;
   const responses: {
     question: string;

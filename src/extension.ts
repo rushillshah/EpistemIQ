@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('epistemiq.start', () => {
-      createAssistantPanel(context);
+      createAssistantPanel();
     })
   );
 

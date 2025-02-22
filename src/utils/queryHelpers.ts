@@ -60,7 +60,7 @@ export async function queryLLMForOptions(
   try {
     const options = JSON.parse(cleanedText) as Option[];
     return options;
-  } catch (e) {
+  } catch {
     vscode.window.showErrorMessage(
       'Failed to parse options from candidate text.'
     );
@@ -126,7 +126,7 @@ export async function generateQuizQuestions(
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   try {
     return JSON.parse(cleanJSONResponse(candidateText));
-  } catch (e) {
+  } catch {
     vscode.window.showErrorMessage('Failed to parse quiz questions.');
     return [];
   }

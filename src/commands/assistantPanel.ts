@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 
-export function createAssistantPanel(context: vscode.ExtensionContext): void {
+export function createAssistantPanel(): void {
   const panel = vscode.window.createWebviewPanel(
     'epistemIQEducation',
     'EpistemIQ Education',
