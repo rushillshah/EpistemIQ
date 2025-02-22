@@ -57,7 +57,6 @@ export async function queryLLMForOptions(
     return [];
   }
   const cleanedText = cleanJSONResponse(candidateText);
-  console.log(cleanedText);
   try {
     const options = JSON.parse(cleanedText) as Option[];
     return options;
