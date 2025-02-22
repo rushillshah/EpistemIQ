@@ -30,9 +30,9 @@ type QuizQuestion = {
 type QuizQuestions = QuizQuestion[];
 
 type WebviewMessage = {
-    type: string;
-  }
+  type: string;
+};
 
-  type ChoiceMessage = WebviewMessage & {
-    choice: string;
-  }
+type ChoiceMessage = WebviewMessage & {
+  choice: string;
+};

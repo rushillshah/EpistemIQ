@@ -15,8 +15,7 @@ import {
   getQuizFocusHTML,
 } from '../utils/templates';
 
-export async function understandWithEpisteme(
-): Promise<void> {
+export async function understandWithEpisteme(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
     vscode.window.showInformationMessage(
