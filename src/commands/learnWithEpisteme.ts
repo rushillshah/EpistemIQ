@@ -15,6 +15,7 @@ import {
   getQuizFeedbackHTML,
 } from '../utils/templates';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function waitForMessage(
   panel: vscode.WebviewPanel,
   expectedType: string
@@ -100,12 +101,12 @@ const handleQuizError = async (
   panel: vscode.WebviewPanel,
   document: vscode.TextDocument
 ) => {
-  let mainOptions = await queryLLMForOptions(diagnostic);
+  const mainOptions = await queryLLMForOptions(diagnostic);
   if (!mainOptions || mainOptions.length === 0) {
     panel.dispose();
     return;
   }
-  let currentQuestionIndex = 0;
+  const currentQuestionIndex = 0;
   const responses: {
     question: string;
     selectedOption: string;
@@ -130,7 +131,7 @@ const handleQuizError = async (
 async function showNextQuestion(
   panel: vscode.WebviewPanel,
   currentQuestionIndex: number,
-  mainOptions: string | any[],
+  mainOptions: Option[],
   diagnostic: vscode.Diagnostic,
   document: vscode.TextDocument,
   responses: { question: string; selectedOption: string; correct: boolean }[]
@@ -183,7 +184,7 @@ const handleTerminateQuiz = async (
 ) => {
   const feedback = await generateQuizFeedback(responses);
   const explanation = await queryLLMForFixSuggestion(diagnostic, document);
-  let combined = getCombinedExplanationTemplate(
+  const combined = getCombinedExplanationTemplate(
     explanation,
     feedback,
     'submitQuizFollowup'

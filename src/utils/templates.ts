@@ -1,4 +1,3 @@
-import { feedbackPrompt } from './prompts';
 import { formatLLMResponse } from './uiHelpers';
 
 export function buildQuizHtml(

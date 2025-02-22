@@ -1,6 +1,6 @@
 type Option = {
   question(arg0: any, question: any): string;
-  options: any;
+  options: Option[];
   label: string;
   isCorrect: boolean;
 };
@@ -28,3 +28,11 @@ type QuizQuestion = {
 };
 
 type QuizQuestions = QuizQuestion[];
+
+type WebviewMessage = {
+    type: string;
+  }
+
+  type ChoiceMessage = WebviewMessage & {
+    choice: string;
+  }
