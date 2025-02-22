@@ -730,3 +730,46 @@ export function getQuizFollowupHTML(followupFeedback: string): string {
     </body>
   </html>`;
 }
+
+export function getLoadingStateHTML(message: string): string {
+  return `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          background-color: #1e1e1e;
+          color: #d4d4d4;
+          font-family: "Segoe UI", sans-serif;
+          padding: 16px;
+          text-align: center;
+        }
+        .spinner {
+          margin: 40px auto;
+          width: 40px;
+          height: 40px;
+          border: 4px solid #444;
+          border-top: 4px solid #0e639c;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        p {
+          font-size: 14px;
+          margin-top: 16px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="spinner"></div>
+      <p>${message}</p>
+      <script>
+        // You can optionally add a close function if needed.
+        const vscode = acquireVsCodeApi();
+      </script>
+    </body>
+  </html>`;
+}
