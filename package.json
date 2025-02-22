@@ -44,13 +44,19 @@
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
     "prettier_check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\"",
-    "prettier_fix": "prettier --write \"**/*.{js,ts,tsx,json,css,md}\""
+    "prettier_fix": "prettier --write \"**/*.{js,ts,tsx,json,css,md}\"",
+    "lint_check": "eslint \"src/**/*.{js,ts,tsx,json,css,md}\"",
+    "lint_fix": "eslint \"src/**/*.{js,ts,tsx,json,css,md}\" --fix"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
     "@types/diff": "^7.0.1",
     "@types/vscode": "^1.75.0",
+    "eslint": "^9.21.0",
+    "globals": "^16.0.0",
     "prettier": "^3.5.1",
-    "typescript": "^4.7.0"
+    "typescript": "^4.7.0",
+    "typescript-eslint": "^8.24.1"
   },
   "dependencies": {
     "diff": "^7.0.0"

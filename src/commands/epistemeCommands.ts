@@ -15,10 +15,7 @@ import {
   getQuizFocusHTML,
 } from '../utils/templates';
 
-export async function understandWithEpisteme(
-  document: vscode.TextDocument,
-  diagnostic: vscode.Diagnostic
-): Promise<void> {
+export async function understandWithEpisteme(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.selection.isEmpty) {
     vscode.window.showInformationMessage(
@@ -126,8 +123,8 @@ export async function quizWithEpisteme(): Promise<void> {
     return;
   }
 
-  let currentQuestionIndex = 0;
-  let correctCount = 0;
+  const currentQuestionIndex = 0;
+  const correctCount = 0;
   const totalQuestions = questions.length;
   const responses: {
     question: string;
