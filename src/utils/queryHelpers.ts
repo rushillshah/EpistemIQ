@@ -64,6 +64,7 @@ export async function queryLLMForOptions(
   const cleanedText = cleanJSONResponse(candidateText);
   try {
     const options = JSON.parse(cleanedText) as Option[];
+    console.log('check the options', options)
     return options;
   } catch {
     vscode.window.showErrorMessage(
@@ -176,7 +177,6 @@ export async function generateQuizFollowupFeedback(
   try {
     const data = await callLLM(prompt);
     const rawResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
     return parseLLMResponse(rawResponse);
   } catch {
     return null;

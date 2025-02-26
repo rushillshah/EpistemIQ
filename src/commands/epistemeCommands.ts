@@ -14,6 +14,7 @@ import {
   getQuizQuestionHTML,
   getQuizFocusHTML,
   getLoadingStateHTML,
+  getQuizFollowupHTML,
 } from '../utils/html/templates';
 import { getRandomLoadingMessage } from '../utils/uiHelpers';
 
@@ -161,7 +162,8 @@ export async function quizWithEpisteme(): Promise<void> {
         followupInput,
         selectedCode
       );
-      panel.webview.html = getQuizFeedbackHTML(newFeedback);
+      const followupHTML = getQuizFollowupHTML(newFeedback);
+      panel.webview.html = followupHTML;
     } else if (message.type === 'closePanel') {
       panel.dispose();
     }
@@ -182,7 +184,6 @@ async function showNextQuestion(
     const feedbackhtml = getQuizFeedbackHTML(
       feedback as unknown as FeedbackResponse
     );
-    console.log('feedback', feedbackhtml);
     panel.webview.html = feedbackhtml;
     return;
   }
