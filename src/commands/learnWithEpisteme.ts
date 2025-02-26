@@ -14,7 +14,7 @@ import {
   getInitialChoiceTemplate,
   getQuizFeedbackHTML,
   getLoadingStateHTML,
-} from '../utils/templates';
+} from '../utils/html/templates';
 import { getRandomLoadingMessage } from '../utils/uiHelpers';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -55,7 +55,6 @@ export async function learnWithEpisteme(
   panel.webview.html = getInitialChoiceTemplate(diagnostic.message);
   const message = await waitForMessage(panel, 'choiceSelected');
   const choice = message.choice;
-  console.log('User selected:', choice);
 
   if (choice === 'understand') {
     handleUnderstandError(diagnostic, document, panel, diagnosticSummary);

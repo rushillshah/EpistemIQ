@@ -4,11 +4,23 @@ import {
   followupLoadingMessages,
 } from '../config';
 
-export function formatLLMResponse(text: string): string {
+export function formatLLMResponse(text: string) {
   let cleaned = text.trim();
   cleaned = cleaned.replace(/^```[\w]*\n/, '');
   cleaned = cleaned.replace(/\n```$/, '');
   return cleaned.trim();
+}
+
+export function parseLLMResponse(response: string) {
+  try {
+    const sanitizedJson = response
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+    return JSON.parse(sanitizedJson);
+  } catch {
+    return null;
+  }
 }
 
 export function getRandomLoadingMessage(

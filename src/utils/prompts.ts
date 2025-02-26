@@ -69,9 +69,10 @@ export const quizPrompt = (
   ---------------------
   ${selectedCode}
   ---------------------
-  Based on the code above, generate 5 to 7 unique quiz questions that test understanding.
+  Based on the code above, generate 5 to 7 unique quiz questions that test understanding of the code snippet.
   Each question must include multiple-choice answers.
-  Focus on ${focus}.
+  If the focus parameter ("${focus}") is a clear, valid, and relevant topic (e.g. "performance", "error handling", "security", "code structure", etc.), incorporate it into the questions.
+  If the focus appears to be gibberish or unrelated to the code (for example, if it contains random characters or words that don't match a programming context), ignore it and generate questions based solely on the code.
   Return the questions as a JSON array in the following format:
   [
     {
@@ -89,10 +90,59 @@ export const quizPrompt = (
 
 export const feedbackPrompt = (
   responsesText: string
-) => `Below are a student's responses to a quiz:
+) => `Below are a user's responses to a quiz:
+  ---------------------
+  ${responsesText}
+  ---------------------
+  Provide structured feedback in JSON format using the following schema:
+  
+  {
+    "quizSummary": "___", // 3 words summarizing the topics covered in the quiz
+    "totalScore": "___", // Total score, like "8/10"
+    "strongTopics": ["___", "___"], // List of strong topics
+    "weakTopics": ["___", "___"], // List of weak topics
+    "suggestionsForImprovement": ["___", "___"] // List of improvement suggestions
+  }
+  
+  Ensure that your response is valid JSON with no additional text.`;
+
+export const quizFollowupPrompt = (
+  responsesText: string,
+  selectedCode: string,
+  followupInput: string
+) =>
+  `Below is a summary of a student's quiz responses regarding a code snippet:
+    ---------------------
+    ${responsesText}
+    ---------------------
+    The original code snippet is:
+    ---------------------
+    ${selectedCode}
+    ---------------------
+    The user has a follow-up question: "${followupInput}"
+
+    Please provide additional tailored clarification and insights.
+    Return ONLY a valid JSON object with the following structure:
+    {
+      "clarification": "___",
+      "quizReview": [
+        {
+          "question": "___",
+          "userAnswer": "___",
+          "isCorrect": true/false,
+          "correctAnswer": "___"
+        }
+      ],
+      "performanceSummary": {
+        "totalScore": "X/Y",
+        "strongTopics": ["___", "___"],
+        "weakTopics": ["___", "___"],
+        "suggestionsForImprovement": ["___", "___"]
+      }
+    }`;
+
+export const summarizePrompt = (selectedCode: string) =>
+  `Summarize the following code snippet in under 50 words. Be sure to include all key hooks (e.g. useEffect hooks), functions, and any special handlers (like handleLeaveChannel) that are present. Return only the summary in plain text.
       ---------------------
-      ${responsesText}
-      ---------------------
-      Please provide a detailed analysis of the student's understanding of the code.
-      Highlight key areas where the student is struggling and suggest improvements.
-      Return your feedback in plain text, keep it short and target concrete points instead of waxing on in explanation. At the end, provide a summary, and a line or two about what they should work on next, with directions to articles and documentation relevant to that area`;
+      ${selectedCode}
+      ---------------------`;

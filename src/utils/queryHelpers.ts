@@ -7,7 +7,11 @@ import {
   quizPrompt,
   feedbackPrompt,
   followupSnippetPrompt,
+  quizFollowupPrompt,
+  summarizePrompt,
 } from './prompts';
+
+import { parseLLMResponse, formatLLMResponse } from './uiHelpers';
 
 import { LLM_API_URL } from '../config';
 
@@ -25,6 +29,7 @@ export function cleanJSONResponse(text: string): string {
   return cleaned.trim();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function callLLM(prompt: string): Promise<any> {
   const body = {
     contents: [
@@ -87,10 +92,7 @@ export async function queryLLMForFixSuggestion(
 }
 
 export async function summarizeCode(selectedCode: string): Promise<string> {
-  const prompt = `Summarize the following code snippet in under 50 words. Be sure to include all key hooks (e.g. useEffect hooks), functions, and any special handlers (like handleLeaveChannel) that are present. Return only the summary in plain text.
----------------------
-${selectedCode}
----------------------`;
+  const prompt = summarizePrompt(selectedCode);
   const data = await callLLM(prompt);
   const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return cleanJSONResponse(candidateText);
@@ -143,56 +145,40 @@ export async function generateQuizFeedback(
     .join('\n\n');
 
   const prompt = feedbackPrompt(responsesText);
-  const data = await callLLM(prompt);
-  const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return candidateText || 'No feedback provided.';
-}
 
-export async function queryLLMForQuizFeedback(
-  quizResponses: {
-    question: string;
-    selectedOption: string;
-    correct: boolean;
-  }[]
-): Promise<string> {
-  const responsesText = quizResponses
-    .map(
-      (r, idx) =>
-        `Q${idx + 1}: ${r.question}\nYour answer: ${r.selectedOption} (${r.correct ? 'Correct' : 'Incorrect'})`
-    )
-    .join('\n\n');
-
-  const prompt = feedbackPrompt(responsesText);
-  const data = await callLLM(prompt);
-  const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return cleanJSONResponse(candidateText);
+  try {
+    const data = await callLLM(prompt);
+    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const formattedText = formatLLMResponse(candidateText);
+    const parsedFeedback = parseLLMResponse(formattedText);
+    if (!parsedFeedback) {
+      throw new Error('Invalid JSON structure');
+    }
+    return parsedFeedback;
+  } catch {
+    return '';
+  }
 }
 
 export async function generateQuizFollowupFeedback(
   responses: { question: string; selectedOption: string; correct: boolean }[],
   followupInput: string,
   selectedCode: string
-): Promise<string> {
+) {
   const responsesText = responses
     .map(
       (r, idx) =>
         `Q${idx + 1}: ${r.question}\nYour answer: ${r.selectedOption} (${r.correct ? 'Correct' : 'Incorrect'})`
     )
     .join('\n\n');
+  const prompt = quizFollowupPrompt(responsesText, followupInput, selectedCode);
 
-  const prompt = `Below is a summary of a student's quiz responses regarding a code snippet:
----------------------
-${responsesText}
----------------------
-The original code snippet is:
----------------------
-${selectedCode}
----------------------
-The user has a follow-up question: "${followupInput}"
-Please provide additional tailored clarification and insights, including a list of the quiz answers and a summary of the student's performance.
-Return only plain text.`;
+  try {
+    const data = await callLLM(prompt);
+    const rawResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-  const data = await callLLM(prompt);
-  const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return cleanJSONResponse(candidateText);
+    return parseLLMResponse(rawResponse);
+  } catch {
+    return null;
+  }
 }

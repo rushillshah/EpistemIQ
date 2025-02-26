@@ -1,4 +1,5 @@
 type Option = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   question(arg0: any, question: any): string;
   options: Option[];
   label: string;
@@ -35,4 +36,12 @@ type WebviewMessage = {
 
 type ChoiceMessage = WebviewMessage & {
   choice: string;
+};
+
+type FeedbackResponse = {
+  totalScore: string;
+  strongTopics: string[];
+  weakTopics: string[];
+  suggestionsForImprovement: string[];
+  quizSummary: string;
 };

@@ -14,7 +14,7 @@ import {
   getQuizQuestionHTML,
   getQuizFocusHTML,
   getLoadingStateHTML,
-} from '../utils/templates';
+} from '../utils/html/templates';
 import { getRandomLoadingMessage } from '../utils/uiHelpers';
 
 export async function understandWithEpisteme(): Promise<void> {
@@ -118,7 +118,8 @@ export async function quizWithEpisteme(): Promise<void> {
     { enableScripts: true }
   );
 
-  panel.webview.html = getQuizFocusHTML(selectedCode);
+  const quizFocusHTML = getQuizFocusHTML(selectedCode);
+  panel.webview.html = quizFocusHTML;
   const focus = await waitForQuizFocus(panel);
   if (!focus) {
     panel.dispose();
@@ -178,7 +179,11 @@ async function showNextQuestion(
   if (currentQuestionIndex >= totalQuestions) {
     panel.webview.html = getLoadingStateHTML('Finalizing quiz results...');
     const feedback = await generateQuizFeedback(responses);
-    panel.webview.html = getQuizFeedbackHTML(feedback);
+    const feedbackhtml = getQuizFeedbackHTML(
+      feedback as unknown as FeedbackResponse
+    );
+    console.log('feedback', feedbackhtml);
+    panel.webview.html = feedbackhtml;
     return;
   }
   const currentQuestion = questions[currentQuestionIndex] as {
