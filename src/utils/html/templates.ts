@@ -379,7 +379,7 @@ function generateQuizResultsHTML(
 
   return `
     <div class="feedback-container">
-      ${getQuizFeedbackHeader(quizTitle, percentage, scoreColorClass, isExpanded)}
+      ${getQuizFeedbackHeader(quizTitle, percentage, scoreColorClass, !isExpanded)}
       <div id="collapsible-content" class="collapsible ${isExpanded ? 'expanded' : 'collapsed'}">
         <div class="feedback-section">
           <div class="content topics-container">

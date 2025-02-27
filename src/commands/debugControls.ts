@@ -199,11 +199,7 @@ const handleTerminateQuiz = async (
   panel.webview.html = getLoadingStateHTML(
     'Explaining and formulating feedback'
   );
-
-  // Generate initial feedback
   const feedback = await generateQuizFeedback(responses, diagnostic.message);
-
-  // Store quiz summary data
   const {
     totalScore,
     strongTopics,
@@ -231,7 +227,6 @@ const handleTerminateQuiz = async (
       diagnostic.message
     );
 
-    // Ensure previous feedback persists
     newFeedback = {
       ...newFeedback,
       totalScore: newFeedback.totalScore || totalScore,

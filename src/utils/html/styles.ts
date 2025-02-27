@@ -7,7 +7,10 @@ export function getCommonStyles(): string {
         ${getFormStyles()}
         ${getLoadingStyles()}
         ${getQuizStyles()}
-        ${getFeedbackStyles()}
+        ${getToggleArrowStyles()}
+        ${getFeedbackContainerStyles()}
+        ${getQuizFollowupStyles()}
+        ${getQuizResultsStyles()}
         ${getScoreRingStyles()}
         ${getFeedbackContainerStyles()}
         ${getQuizStyles()}
@@ -17,7 +20,6 @@ export function getCommonStyles(): string {
     `;
 }
 
-// Base styles for the entire page
 function getBaseStyles(): string {
   return `
       body {
@@ -31,7 +33,6 @@ function getBaseStyles(): string {
     `;
 }
 
-// Text-related styles (headings, paragraphs, etc.)
 function getTextStyles(): string {
   return `
       h3 {
@@ -60,7 +61,6 @@ function getTextStyles(): string {
     `;
 }
 
-// Button styling
 function getButtonStyles(): string {
   return `
       button {
@@ -86,7 +86,6 @@ function getButtonStyles(): string {
     `;
 }
 
-// Form elements (textarea, input)
 function getFormStyles(): string {
   return `
       textarea, input {
@@ -102,7 +101,6 @@ function getFormStyles(): string {
     `;
 }
 
-// Loading animation and container styles
 function getLoadingStyles(): string {
   return `
       .loading-container {
@@ -150,64 +148,6 @@ function getLoadingStyles(): string {
     `;
 }
 
-// Styles for feedback sections, suggestions, and score colors
-function getFeedbackStyles(): string {
-  return `
-      /* Score Bar for Quiz Feedback */
-      .score-bar {
-        width: 100%;
-        background: #444;
-        height: 14px;
-        border-radius: 7px;
-        overflow: hidden;
-        margin-top: 10px;
-      }
-      .score-fill {
-        height: 14px;
-        background: #0e639c;
-        width: 0%;
-        border-radius: 7px;
-        transition: width 0.6s ease-in-out;
-      }
-  
-      /* Score Color Classes */
-      .score-red { color: #e74c3c; font-weight: bold; } /* Below 50% */
-      .score-orange { color: #e67e22; font-weight: bold; } /* 50% - 65% */
-      .score-yellow { color: #f1c40f; font-weight: bold; } /* 65% - 85% */
-      .score-green { color: #2ecc71; font-weight: bold; } /* Above 85% */
-  
-      /* Suggestions List */
-      .suggestions {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        line-height: 1;
-      }
-      .suggestions li {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        line-height: 1;
-        padding: 0;
-        margin: 0;
-        line-height: 20px;
-      }
-
-      .suggestions li:last-child {
-        margin-bottom: 10px;
-      }
-
-      .suggestions li::before {
-        content: "💡";
-        font-size: 14px;
-      }
-    `;
-}
-
-// Styles for the circular score ring visualization
 function getScoreRingStyles(): string {
   return `
       .score-container {
@@ -231,7 +171,6 @@ function getScoreRingStyles(): string {
         stroke-linecap: round;
         transition: stroke-dashoffset 0.6s ease-in-out;
       }
-      /* Ensure text stays centered */
       .score-text {
         font-size: 16px;
         fill: white;
@@ -240,12 +179,43 @@ function getScoreRingStyles(): string {
         text-anchor: middle;
         dominant-baseline: central;
       }
-      /* Score Color Classes */
       .score-red { stroke:rgb(255, 25, 0); } /* Below 50% */
       .score-orange { stroke: #e67e22; } /* 50% - 65% */
       .score-yellow { stroke: #f1c40f; } /* 65% - 85% */
       .score-green { stroke: #2ecc71; } /* Above 85% */
     `;
+}
+
+function getToggleArrowStyles(): string {
+  return `
+      .arrow-icon {
+        font-size: 16px;
+        transition: transform 0.3s ease-in-out;
+        margin-left: 10px;
+        opacity: 0;
+      }
+      .toggle-arrow {
+        position: absolute;
+        top: 71px;
+        right: 22px;
+        font-size: 16px;
+        transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+        opacity: 0;
+        pointer-events: none; 
+      }
+      .toggle-arrow:hover {
+        opacity: 0.8;
+        box-shadow: 0px 0px 8px rgba(255, 255, 255, 0.3);
+      }
+      .toggle-arrow.rotated {
+        transform: rotate(180deg);
+      }
+      .collapsible {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.4s ease-in-out;
+      }
+  `;
 }
 
 function getFeedbackContainerStyles(): string {
@@ -260,19 +230,73 @@ function getFeedbackContainerStyles(): string {
         justify-content: space-between;
         gap: 10px;
       }
+      .feedback-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        padding: 10px;
+        transition: background 0.3s ease-in-out;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+      .feedback-header:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .feedback-header-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        justify-content: space-between;
+      }
+      .feedback-header h2 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+      .feedback-header:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .feedback-header:hover .arrow-icon {
+        opacity: 0.5;
+        pointer-events: auto;
+      }
     `;
 }
 
-function getQuizStyles(): string {
+function getQuizFollowupStyles(): string {
   return `
-      .option {
-        margin: 8px 0;
-        transition: transform 0.2s;
+      .clarification-section {
+        background-color: #252526;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        border: 1px solid #333;
       }
-      .option:hover {
-        transform: scale(1.02);
+
+      .clarification-section h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #d4d4d4;
+        padding: 10px;
       }
-  
+      .clarification-container {
+        padding: 10px;
+        padding-top: 0;
+        border: none;
+        font-family: Consolas, monospace;
+        white-space: normal;
+      }
+      .clarification-text {
+        padding: 10px;
+      }
+      .clarification {
+        order: 0;
+        transition: order 0.3s ease-in-out;
+      }
+  `;
+}
+
+function getQuizResultsStyles(): string {
+  return `
       .suggestions-container, .topics-container {
         white-space: normal;
       }
@@ -301,102 +325,50 @@ function getQuizStyles(): string {
         background: #228b22;
         color: white;
       }
-      .feedback-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        cursor: pointer;
-        padding: 10px;
-        transition: background 0.3s ease-in-out;
-        border-radius: 6px;
-        margin-bottom: 10px;
-      }
-      .feedback-header:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
-      .feedback-header-content {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        justify-content: space-between;
-      }
-      .arrow-icon {
-        font-size: 16px;
-        transition: transform 0.3s ease-in-out;
-        margin-left: 10px;
-      }
-      .collapsible {
-        overflow: hidden;
-        max-height: 0;
-        transition: max-height 0.4s ease-in-out;
-      }
-      .feedback-header h2 {
-        margin: 0;
-        font-size: 1.2rem;
-      }
-      .clarification-section {
-        background-color: #252526;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        border: 1px solid #333;
-      }
-
-      .clarification-section h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        color: #d4d4d4;
-        padding: 10px;
-      }
-      .clarification-container {
-        padding: 10px;
-        padding-top: 0;
-        border: none;
-        font-family: Consolas, monospace;
-        white-space: normal;
-      }
-      .feedback-header:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
-      .clarification-text {
-        padding: 10px;
-      }
-      .toggle-arrow {
-        position: absolute;
-        top: 71px;
-        right: 22px;
-        font-size: 16px;
-        transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
-        opacity: 0; /* Hide by default */
-        pointer-events: none; /* Prevent interactions when hidden */
-      }
-
-      .feedback-header:hover .toggle-arrow {
-        opacity: 0.5; /* Show on hover */
-        pointer-events: auto; /* Allow interactions when visible */
-      }
-
-      .toggle-arrow:hover {
-        opacity: 0.8;
-        box-shadow: 0px 0px 8px rgba(255, 255, 255, 0.3); /* Glowing shadow effect */
-      }
-
-      .toggle-arrow.rotated {
-        transform: rotate(180deg);
-      }
-
       .collapsible-content {
         transition: max-height 0.4s ease-in-out;
         overflow: hidden;
         max-height: 1000px;
       }
-
       .collapsed {
         max-height: 0;
       }
+      .suggestions {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        line-height: 1;
+      }
+      .suggestions li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1;
+        padding: 0;
+        margin: 0;
+        line-height: 20px;
+      }
+      .suggestions li:last-child {
+        margin-bottom: 10px;
+      }
+      .suggestions li::before {
+        content: "💡";
+        font-size: 14px;
+      }
+  `;
+}
 
-      .clarification {
-        order: 0;
-        transition: order 0.3s ease-in-out;
+function getQuizStyles(): string {
+  return `
+      .option {
+        margin: 8px 0;
+        transition: transform 0.2s;
+      }
+      .option:hover {
+        transform: scale(1.02);
       }
     `;
 }
@@ -417,7 +389,6 @@ function getInputSectionStyles(): string {
         justify-content: center;
         align-items: center;
       }
-
       .input-wrapper {
         display: flex;
         align-items: center;
@@ -430,7 +401,6 @@ function getInputSectionStyles(): string {
         max-width: 800px;
         overflow: hidden;
       }
-
       .input-wrapper input,
       .input-wrapper textarea {
         flex-grow: 1;
@@ -445,7 +415,6 @@ function getInputSectionStyles(): string {
         width: 100%;
         max-width: calc(100% - 50px);
       }
-
       .send-button {
         padding: 10px;
         font-size: 18px;
@@ -456,16 +425,13 @@ function getInputSectionStyles(): string {
         transition: color 0.2s ease-in-out;
         flex-shrink: 0;
       }
-
       .send-button:hover {
         color: #1177bb;
       }
-
       #quizFocusInput, #followupInput {
         height: 18px;
         margin-bottom: 0;
       }
-
       body {
         padding-bottom: 100px;
         overflow-x: hidden;
