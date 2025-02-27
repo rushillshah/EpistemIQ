@@ -38,7 +38,7 @@ epesteme-ai
 │  ├─ commands
 │  │  ├─ assistantPanel.ts
 │  │  ├─ epistemeCommands.ts
-│  │  └─ learnWithepistemiq.ts
+│  │  └─ debugControls.ts
 │  ├─ config.ts
 │  ├─ extension.ts
 │  ├─ providers

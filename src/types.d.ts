@@ -44,6 +44,7 @@ type FeedbackResponse = {
   weakTopics: string[];
   suggestionsForImprovement: string[];
   quizSummary: string;
+  clarification?: string;
 };
 
 type QuizReviewItem = {

@@ -179,10 +179,11 @@ async function showNextQuestion(
   correctCount: number
 ): Promise<void> {
   if (currentQuestionIndex >= totalQuestions) {
-    panel.webview.html = getLoadingStateHTML('Finalizing quiz results...');
+    panel.webview.html = getLoadingStateHTML('Finalizing quiz results');
     const feedback = await generateQuizFeedback(responses);
     const feedbackhtml = getQuizFeedbackHTML(
-      feedback as unknown as FeedbackResponse
+      feedback as unknown as FeedbackResponse,
+      null
     );
     panel.webview.html = feedbackhtml;
     return;

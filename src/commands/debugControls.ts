@@ -143,15 +143,17 @@ async function showNextQuestion(
   diagnostic: vscode.Diagnostic,
   document: vscode.TextDocument,
   responses: { question: string; selectedOption: string; correct: boolean }[]
-): Promise<void> {
+) {
   if (currentQuestionIndex >= mainOptions.length) {
-    handleTerminateQuiz(diagnostic, document, responses, panel);
+    await handleTerminateQuiz(diagnostic, document, responses, panel);
     return;
   }
+
   const currentQuestion = mainOptions[currentQuestionIndex] as unknown as {
     question: string;
     options: { label: string; isCorrect: boolean }[];
   };
+
   panel.webview.html = buildQuizHtml(
     currentQuestion.options.map((opt) => ({
       label: opt.label,
@@ -159,11 +161,14 @@ async function showNextQuestion(
     })),
     currentQuestion.question
   );
+
   const selectionMsg = await waitForMessage(panel, 'optionSelected');
+
   const selectedIndex =
     typeof selectionMsg === 'object' && selectionMsg.index !== undefined
       ? selectionMsg.index
       : selectionMsg;
+
   if (selectedIndex !== undefined) {
     const selectedOption = currentQuestion.options[selectedIndex].label;
     const isCorrect = currentQuestion.options[selectedIndex].isCorrect;
@@ -173,6 +178,7 @@ async function showNextQuestion(
       correct: isCorrect,
     });
   }
+
   currentQuestionIndex++;
   await showNextQuestion(
     panel,
@@ -191,30 +197,57 @@ const handleTerminateQuiz = async (
   panel: vscode.WebviewPanel
 ) => {
   panel.webview.html = getLoadingStateHTML(
-    'Explaining and formulating feedback...'
+    'Explaining and formulating feedback'
   );
-  const feedback = await generateQuizFeedback(responses);
+
+  // Generate initial feedback
+  const feedback = await generateQuizFeedback(responses, diagnostic.message);
+
+  // Store quiz summary data
+  const {
+    totalScore,
+    strongTopics,
+    weakTopics,
+    suggestionsForImprovement,
+    quizSummary,
+  } = feedback;
+
   const explanation = await queryLLMForFixSuggestion(diagnostic, document);
-  const combined = getCombinedExplanationTemplate(
-    explanation,
-    feedback,
-    'submitQuizFollowup'
-  );
-  panel.webview.html = combined;
+
+  panel.webview.html = getQuizFeedbackHTML(feedback, explanation);
 
   while (true) {
     const followupMsg = await waitForMessage(panel, 'submitQuizFollowup');
     if (!followupMsg || !followupMsg.input) break;
+
     const followupInput = followupMsg.input;
     panel.webview.html = getLoadingStateHTML(
       getRandomLoadingMessage('followup')
     );
-    const newFeedback = await generateQuizFollowupFeedback(
+
+    let newFeedback = await generateQuizFollowupFeedback(
       responses,
       followupInput,
       diagnostic.message
     );
-    panel.webview.html = getLoadingStateHTML('Finalizing quiz results...');
-    panel.webview.html = getQuizFeedbackHTML(newFeedback);
+
+    // Ensure previous feedback persists
+    newFeedback = {
+      ...newFeedback,
+      totalScore: newFeedback.totalScore || totalScore,
+      strongTopics: newFeedback.strongTopics?.length
+        ? newFeedback.strongTopics
+        : strongTopics,
+      weakTopics: newFeedback.weakTopics?.length
+        ? newFeedback.weakTopics
+        : weakTopics,
+      suggestionsForImprovement: newFeedback.suggestionsForImprovement?.length
+        ? newFeedback.suggestionsForImprovement
+        : suggestionsForImprovement,
+      quizSummary: newFeedback.quizSummary || quizSummary,
+    };
+    panel.webview.html = getQuizFeedbackHTML(newFeedback, explanation);
+
+    panel.webview.postMessage({ type: 'attachToggleScript' });
   }
 };

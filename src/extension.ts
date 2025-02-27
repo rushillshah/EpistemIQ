@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { createAssistantPanel } from './commands/assistantPanel';
-import { learnWithEpisteme } from './commands/learnWithEpisteme';
+import { learnWithEpisteme } from './commands/debugControls';
 import {
   understandWithEpisteme,
   quizWithEpisteme,
-} from './commands/epistemeCommands';
+} from './commands/learnControls';
 import { EpistemeCodeActionProvider } from './providers/codeActionsProvider';
 import { EpistemeCodeLensProvider } from './providers/codeLensProvider';
 import { registerEpistemeContentProvider } from './providers/epistemeContentProvider';
