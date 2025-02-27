@@ -44,4 +44,25 @@ type FeedbackResponse = {
   weakTopics: string[];
   suggestionsForImprovement: string[];
   quizSummary: string;
+  clarification?: string;
+};
+
+type QuizReviewItem = {
+  question: string;
+  userAnswer: string;
+  isCorrect: boolean;
+  correctAnswer: string;
+};
+
+type PerformanceSummary = {
+  totalScore: string;
+  strongTopics: string[];
+  weakTopics: string[];
+  suggestionsForImprovement: string[];
+};
+
+type QuizFollowup = {
+  clarification: string;
+  quizReview: QuizReviewItem[];
+  performanceSummary: PerformanceSummary;
 };

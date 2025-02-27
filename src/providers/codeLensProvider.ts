@@ -19,7 +19,7 @@ export class EpistemeCodeLensProvider implements vscode.CodeLensProvider {
       );
       const command: vscode.Command = {
         command: 'epistemiq.errors',
-        title: 'Debug with Episteme',
+        title: 'Debug with EpistemIQ',
         arguments: [document, diagnostic],
       };
       lenses.push(new vscode.CodeLens(lensRange, command));
