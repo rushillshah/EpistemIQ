@@ -221,7 +221,6 @@ function getToggleArrowStyles(): string {
 
 function getFeedbackContainerStyles(): string {
   return `
-      /* Feedback Section Layout */
       .feedback-container {
         max-width: 600px;
         margin: auto;
@@ -326,11 +325,11 @@ function quizReviewStyles(): string {
         gap: 10px;
       }
       .correct-answer {
-        color: #2ecc71; /* Green */
+        color: #2ecc71; 
         font-weight: 400;
       }
       .incorrect-answer {
-        color: #e74c3c; /* Red */
+        color: #e74c3c;
         font-weight: 400;
       }
    `;
@@ -352,9 +351,8 @@ function getQuizResultsStyles(): string {
         flex-wrap: wrap;
         gap: 6px;
       }
-      /* Ensure topic container has relative positioning */
       .topic {
-        position: relative; /* Makes sure child elements use this as a reference */
+        position: relative;
         padding: 12px;
         border-radius: 6px;
         margin: 6px 0;
@@ -362,22 +360,19 @@ function getQuizResultsStyles(): string {
         transition: background 0.3s ease-in-out;
       }
 
-      /* Arrow positioning */
       .topic-arrow-icon {
         position: absolute;
         top: 8px; 
         right: 10px; 
         font-size: 14px;
         transition: transform 0.3s ease-in-out;
-        opacity: 0; /* Initially hidden */
+        opacity: 0;
       }
 
-      /* Show arrow when hovering over the topic */
       .topic:hover .arrow-icon {
         opacity: 1;
       }
 
-      /* Rotate arrow when expanded */
       .rotated {
         transform: rotate(180deg);
       }

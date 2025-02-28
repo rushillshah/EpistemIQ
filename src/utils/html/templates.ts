@@ -18,7 +18,7 @@ export function buildQuizHtml(
       ${optionsHtml}
     </div>
     <script>
-      ${getVscodeApiScript()} // Ensure VS Code API is set up
+      ${getVscodeApiScript()}
 
       document.getElementById("diagnostic").innerText = ${JSON.stringify(formattedDiagnostic)};
 
@@ -227,7 +227,7 @@ export function getFollowupSection(followupType: string): string {
         const input = document.getElementById("followupInput").value.trim();
         if (!input) return;
         vscode.postMessage({ type: '${followupType}', input: input });
-        document.getElementById("followupInput").value = ""; // Clear input after sending
+        document.getElementById("followupInput").value = ""; 
       }
 
       document.getElementById("followupInput").addEventListener("keypress", function(event) {
@@ -305,7 +305,7 @@ function getCollapsibleScript(isExpanded: boolean): string {
       document.addEventListener("DOMContentLoaded", () => {
         const content = document.getElementById("collapsible-content");
         if (${isExpanded}) {
-          content.style.maxHeight = content.scrollHeight + "px"; // Expanded
+          content.style.maxHeight = content.scrollHeight + "px"; 
         }
       });
     </script>
@@ -419,10 +419,10 @@ export function getQuizFeedbackHTML(
     totalScore,
     strongTopics,
     weakTopics,
-    explanation ? [] : suggestionsForImprovement, // Hide suggestions if explanation exists
+    explanation ? [] : suggestionsForImprovement,
     responses,
     true,
-    explanation // Pass explanation separately
+    explanation
   );
 
   const bodyContent = `
@@ -443,7 +443,7 @@ function generateQuizResultsHTML(
   suggestionsForImprovement: string[],
   responses: QuizResponses,
   isExpanded: boolean,
-  explanation?: string | null // Optional explanation parameter
+  explanation?: string | null
 ): string {
   const {
     percentage,
@@ -458,7 +458,6 @@ function generateQuizResultsHTML(
     suggestionsForImprovement
   );
 
-  // Explanation takes priority over suggestions if present
   const explanationOrSuggestionsHtml = explanation
     ? `<div class="content">
         <h3>Explanation</h3>
