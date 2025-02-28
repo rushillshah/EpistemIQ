@@ -314,8 +314,8 @@ function getCollapsibleScript(isExpanded: boolean): string {
 
 function formatQuizData(
   totalScore: string,
-  strongTopics: string[],
-  weakTopics: string[],
+  strongTopics: Record<string, string>,
+  weakTopics: Record<string, string>,
   suggestionsForImprovement: string[]
 ) {
   const [score, total] = totalScore.split('/').map(Number);
@@ -329,16 +329,30 @@ function formatQuizData(
           ? 'score-yellow'
           : 'score-green';
 
-  const strongTopicsHtml = strongTopics.length
-    ? strongTopics
-        .map((topic) => `<div class="topic strong-topic">${topic}</div>`)
-        .join(' ')
+  const strongTopicsHtml = Object.keys(strongTopics).length
+    ? Object.entries(strongTopics)
+        .map(
+          ([topic, reason]) => `
+          <div class="topic strong-topic">
+            <span class="topic-name">${topic}</span>
+            <p class="topic-explanation hidden">${reason}</p>
+          </div>
+        `
+        )
+        .join('')
     : '<div><p>No strong topics identified.</p></div>';
 
-  const weakTopicsHtml = weakTopics.length
-    ? weakTopics
-        .map((topic) => `<div class="topic weak-topic">${topic}</div>`)
-        .join(' ')
+  const weakTopicsHtml = Object.keys(weakTopics).length
+    ? Object.entries(weakTopics)
+        .map(
+          ([topic, reason]) => `
+          <div class="topic weak-topic">
+            <span class="topic-name">${topic}</span>
+            <p class="topic-explanation hidden">${reason}</p>
+          </div>
+        `
+        )
+        .join('')
     : '<div><p>No weak topics identified.</p></div>';
 
   const suggestionsHtml = suggestionsForImprovement.length
@@ -356,59 +370,15 @@ function formatQuizData(
   };
 }
 
-function generateQuizResultsHTML(
-  quizTitle: string,
-  totalScore: string,
-  strongTopics: string[],
-  weakTopics: string[],
-  suggestionsForImprovement: string[],
-  isExpanded: boolean
-): string {
-  const {
-    percentage,
-    scoreColorClass,
-    strongTopicsHtml,
-    weakTopicsHtml,
-    suggestionsHtml,
-  } = formatQuizData(
-    totalScore,
-    strongTopics,
-    weakTopics,
-    suggestionsForImprovement
-  );
-
-  return `
-    <div class="feedback-container">
-      ${getQuizFeedbackHeader(quizTitle, percentage, scoreColorClass, !isExpanded)}
-      <div id="collapsible-content" class="collapsible ${isExpanded ? 'expanded' : 'collapsed'}">
-        <div class="feedback-section">
-          <div class="content topics-container">
-            <h3>Strong Topics</h3>
-            <div class="topics">${strongTopicsHtml}</div>
-          </div>
-          <div class="content topics-container">
-            <h3>Weak Topics</h3>
-            <div class="topics">${weakTopicsHtml}</div>
-          </div>
-        </div>
-        <div class="content suggestions-container-">
-          <h3>Suggestions for Improvement</h3>
-          <ul class="suggestions">${suggestionsHtml}</ul>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-export function getQuizFollowupHTML(followupFeedback: QuizFollowup): string {
+export function getQuizFollowupHTML(followupFeedback: QuizFollowup) {
   let parsedClarification = formatLLMResponse(followupFeedback.clarification);
   parsedClarification = parsedClarification.replace(/\n/g, '\n\n');
 
   const { totalScore, strongTopics, weakTopics, suggestionsForImprovement } =
-    followupFeedback.performanceSummary;
+    followupFeedback;
 
   const bodyContent = `
-    ${generateQuizResultsHTML('Quiz Results', totalScore, strongTopics, weakTopics, suggestionsForImprovement, false)}
+    ${generateQuizResultsHTML('Quiz Results', totalScore, strongTopics, weakTopics, suggestionsForImprovement, null as unknown as QuizResponses, false)}
     <section class="clarification-section">
       <h3>Clarification</h3>
       <div class="content clarification-container" id="clarificationBlock">
@@ -424,7 +394,8 @@ export function getQuizFollowupHTML(followupFeedback: QuizFollowup): string {
 
 export function getQuizFeedbackHTML(
   feedback: FeedbackResponse,
-  explanation: string | null = null
+  explanation: string | null = null,
+  responses: QuizResponses
 ): string {
   const {
     quizSummary,
@@ -435,14 +406,6 @@ export function getQuizFeedbackHTML(
     clarification,
   } = feedback;
 
-  const explanationHtml = explanation
-    ? `<div class="content">
-        <h3>Explanation</h3>
-        <pre id="explanationBlock"></pre>
-        <script>document.getElementById("explanationBlock").textContent = ${JSON.stringify(explanation)};</script>
-      </div>`
-    : '';
-
   const clarificationHtml = clarification
     ? `<div class="content clarification-container">
         <h3>Clarification</h3>
@@ -451,13 +414,108 @@ export function getQuizFeedbackHTML(
       </div>`
     : '';
 
+  const quizResultsHtml = generateQuizResultsHTML(
+    quizSummary,
+    totalScore,
+    strongTopics,
+    weakTopics,
+    explanation ? [] : suggestionsForImprovement, // Hide suggestions if explanation exists
+    responses,
+    true,
+    explanation // Pass explanation separately
+  );
+
   const bodyContent = `
-    ${generateQuizResultsHTML(quizSummary, totalScore, strongTopics, weakTopics, suggestionsForImprovement, true)}
-    ${explanationHtml}
+    ${quizResultsHtml}
     ${clarificationHtml}
     ${getFollowupSection('submitQuizFollowup')}
     ${getCollapsibleScript(true)}
   `;
 
   return htmlDocument(bodyContent, false);
+}
+
+function generateQuizResultsHTML(
+  quizTitle: string,
+  totalScore: string,
+  strongTopics: Record<string, string>,
+  weakTopics: Record<string, string>,
+  suggestionsForImprovement: string[],
+  responses: QuizResponses,
+  isExpanded: boolean,
+  explanation?: string | null // Optional explanation parameter
+): string {
+  const {
+    percentage,
+    scoreColorClass,
+    strongTopicsHtml,
+    weakTopicsHtml,
+    suggestionsHtml,
+  } = formatQuizData(
+    totalScore,
+    strongTopics,
+    weakTopics,
+    suggestionsForImprovement
+  );
+
+  // Explanation takes priority over suggestions if present
+  const explanationOrSuggestionsHtml = explanation
+    ? `<div class="content">
+        <h3>Explanation</h3>
+        <pre id="explanationBlock"></pre>
+        <script>document.getElementById("explanationBlock").innerHTML = ${JSON.stringify(explanation)};</script>
+      </div>`
+    : `<div class="content suggestions-container">
+        <h3>Suggestions for Improvement</h3>
+        <ul class="suggestions">${suggestionsHtml}</ul>
+      </div>`;
+
+  return `
+    <div class="feedback-container">
+      ${getQuizFeedbackHeader(quizTitle, percentage, scoreColorClass, !isExpanded)}
+      <div id="collapsible-content" class="collapsible ${isExpanded ? 'expanded' : 'collapsed'}">
+        <div class="feedback-section">
+          <div class="content topics-container">
+            <h3>Strong Topics</h3>
+            <div class="topics">${strongTopicsHtml}</div>
+          </div>
+          <div class="content topics-container">
+            <h3>Weak Topics</h3>
+            <div class="topics">${weakTopicsHtml}</div>
+          </div>
+        </div>
+        ${explanationOrSuggestionsHtml} <!-- This dynamically shows Explanation OR Suggestions -->
+      </div>
+      ${generateQuizReviewHTML(responses)}
+    </div>
+  `;
+}
+
+function generateQuizReviewHTML(responses: QuizResponses): string {
+  if (!responses) return '';
+
+  return `
+    <div class="content quiz-review-container">
+      <h3>Quiz Review</h3>
+      <ul class="quiz-review">
+        ${responses
+          .map(
+            ({ question, selectedOption, correct, correctAnswer }) => `
+          <li class="quiz-review-item">
+            <div class="question-text">${question}</div>
+            <div class="answer-section">
+              ${
+                correct
+                  ? `<div class="answer correct-answer">✅ <strong>Your Answer:</strong> ${selectedOption}</div>`
+                  : `<div class="answer incorrect-answer">❌ <strong>Your Answer:</strong> ${selectedOption}</div>
+                     <div class="answer correct-answer">✔ <strong>Correct Answer:</strong> ${correctAnswer}</div>`
+              }
+            </div>
+          </li>
+        `
+          )
+          .join('')}
+      </ul>
+    </div>
+  `;
 }

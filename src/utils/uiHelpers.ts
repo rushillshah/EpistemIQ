@@ -2,7 +2,7 @@ import {
   quizLoadingMessages,
   explanationLoadingMessages,
   followupLoadingMessages,
-} from '../config';
+} from '../constants';
 
 export function formatLLMResponse(text: string) {
   let cleaned = text.trim();

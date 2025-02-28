@@ -15,6 +15,7 @@ export function getCommonStyles(): string {
         ${getFeedbackContainerStyles()}
         ${getQuizStyles()}
         ${getInputSectionStyles()}
+        ${quizReviewStyles()}
 
       </style>
     `;
@@ -295,6 +296,46 @@ function getQuizFollowupStyles(): string {
   `;
 }
 
+function quizReviewStyles(): string {
+  return `
+      .quiz-review-container {
+        background: #252526;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #333;
+      }
+      .quiz-review {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .quiz-review-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #444;
+      }
+      .quiz-review-item:last-child {
+        border-bottom: none;
+      }
+      .question-text {
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .answer-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .correct-answer {
+        color: #2ecc71; /* Green */
+        font-weight: 400;
+      }
+      .incorrect-answer {
+        color: #e74c3c; /* Red */
+        font-weight: 400;
+      }
+   `;
+}
+
 function getQuizResultsStyles(): string {
   return `
       .suggestions-container, .topics-container {
@@ -311,19 +352,53 @@ function getQuizResultsStyles(): string {
         flex-wrap: wrap;
         gap: 6px;
       }
+      /* Ensure topic container has relative positioning */
       .topic {
-        background: #333;
-        padding: 6px 10px;
-        border-radius: 12px;
-        font-size: 12px;
+        position: relative; /* Makes sure child elements use this as a reference */
+        padding: 12px;
+        border-radius: 6px;
+        margin: 6px 0;
+        cursor: pointer;
+        transition: background 0.3s ease-in-out;
       }
-      .weak-topic {
-        background: #8b0000;
-        color: white;
+
+      /* Arrow positioning */
+      .topic-arrow-icon {
+        position: absolute;
+        top: 8px; 
+        right: 10px; 
+        font-size: 14px;
+        transition: transform 0.3s ease-in-out;
+        opacity: 0; /* Initially hidden */
+      }
+
+      /* Show arrow when hovering over the topic */
+      .topic:hover .arrow-icon {
+        opacity: 1;
+      }
+
+      /* Rotate arrow when expanded */
+      .rotated {
+        transform: rotate(180deg);
       }
       .strong-topic {
-        background: #228b22;
-        color: white;
+        background-color:rgb(0, 89, 21);
+        border: 1px solid rgb(0, 63, 15);
+      }
+      .weak-topic {
+        background-color:rgb(122, 0, 10);
+        border: 1px solid #721c24;
+      }
+      .topic:hover {
+        opacity: 0.8;
+      }
+      .topic-explanation {
+        font-size: 14px;
+        margin-top: 5px;
+        display: block;
+      }
+      .hidden {
+        display: none;
       }
       .collapsible-content {
         transition: max-height 0.4s ease-in-out;
