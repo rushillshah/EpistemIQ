@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import { TOPIC_CATEGORIES } from '../constants';
+
 export const initialQuestionPrompt = (diagnostic: vscode.Diagnostic) => {
   return `Given the following diagnostic error: "${diagnostic.message}",
           list three potential causes as a JSON array of objects with "label" and "isCorrect" (true for the correct cause, others false).
@@ -108,81 +110,90 @@ export const feedbackPrompt = (
   responsesText: string,
   diagnostic?: string
 ) => `Below are a user's responses to a quiz:
-    ---------------------
-    ${responsesText}
-    ---------------------
-    ${
-      diagnostic
-        ? `Additionally, the quiz was based on the following diagnostic error:
-    ---------------------
-    ${diagnostic}
-    ---------------------`
-        : ''
-    }
-    
-    Provide structured feedback in JSON format using the following schema:
-    
-    {
-      "quizSummary": "___", // 3 words summarizing the topics covered in the quiz
-      "totalScore": "___", // Total score, like "8/10"
-      "strongTopics": ["___", "___"], // List of strong topics
-      "weakTopics": ["___", "___"], // List of weak topics
-      "suggestionsForImprovement": ["___", "___"], // List of improvement suggestions
-      ${diagnostic ? `"explanation": "___"` : ''} // If diagnostic is provided, include an explanation of the error
-    }
-    
-    Ensure that your response is valid JSON with no additional text.`;
+      ---------------------
+      ${responsesText}
+      ---------------------
+      ${
+        diagnostic
+          ? `Additionally, the quiz was based on the following diagnostic error:
+      ---------------------
+      ${diagnostic}
+      ---------------------`
+          : ''
+      }
+      
+      Provide structured feedback in JSON format using the following schema:
+      
+      {
+        "quizSummary": "___", // this should be just 2-3 words on what the quiz topic is 
+        "totalScore": "___",
+        "strongTopics": {
+          "topic_name_1": "why it's strong",
+          "topic_name_2": "why it's strong"
+        },
+        "weakTopics": {
+          "topic_name_1": "why it's weak",
+          "topic_name_2": "why it's weak"
+        },
+        "suggestionsForImprovement": ["___", "___", "Recommended problems to solve: __URL__, __URL__"]
+        ${diagnostic ? `"explanation": "___"` : ''}
+      }
+      
+      IMPORTANT: When assigning topics in "strongTopics" and "weakTopics", ONLY use topics from this fixed list:
+      ${TOPIC_CATEGORIES.join(', ')}
+      
+      Ensure that your response is valid JSON with no additional text.`;
 
 export const quizFollowupPrompt = (
   responsesText: string,
   selectedCode: string,
   followupInput: string
-) =>
-  `Below is a summary of a student's quiz responses regarding a code snippet:
-        ---------------------
-        ${responsesText}
-        ---------------------
-        The original code snippet is:
-        ---------------------
-        ${selectedCode}
-        ---------------------
-        The user has a follow-up question: "${followupInput}"
-    
-        Please provide additional tailored clarification and insights.
-    
-        **Clarification Formatting Instructions:**
-        - The clarification must be written in **plain text** with **no markdown formatting** (e.g., no **bold**, _italic_, or \`inline code\`).
-        - Use **short, structured paragraphs** with at most **2 sentences per paragraph**.
-        - Separate each paragraph with **a blank line** to improve readability. (2 newlines)
-        - Provide a clear, educational explanation without unnecessary complexity.
-    
-        **Example of correct clarification formatting:**
-        "React PropTypes are used to define expected data types for component props. They help catch type mismatches early during development.
-    
-        The 'intl' prop is an object, typically containing internationalization data. Since its structure is not strictly defined in PropTypes, it can store various localization-related properties.
-    
-        The 'children' prop allows any valid React node, such as elements, text, or fragments. However, it does not accept functions.
-    
-        Boolean props like 'expanded' and 'isPublic' must strictly be true or false values, ensuring component behavior is predictable."
-    
-        **Return ONLY a valid JSON object with the following structure:**
-        {
-          "clarification": "___", // Explanation in plain text, using paragraph breaks as shown above.
-          "quizReview": [
+) => `Below are a user's responses to a quiz regarding a code snippet:
+            ---------------------
+            ${responsesText}
+            ---------------------
+            The original code snippet is:
+            ---------------------
+            ${selectedCode}
+            ---------------------
+            The user has a follow-up question: "${followupInput}"
+            
+            Provide structured feedback in JSON format using the following schema:
+            
             {
-              "question": "___",
-              "userAnswer": "___",
-              "isCorrect": true/false,
-              "correctAnswer": "___"
+              "quizSummary": "___", // this should be just 2-3 words summarizing the quiz topic
+              "totalScore": "___",
+              "strongTopics": {
+                "topic_name_1": "why it's strong",
+                "topic_name_2": "why it's strong"
+              },
+              "weakTopics": {
+                "topic_name_1": "why it's weak",
+                "topic_name_2": "why it's weak"
+              },
+              "suggestionsForImprovement": ["___", "___", "Recommended problems to solve: __URL__, __URL__"],
+              "clarification": "___" // Explanation in plain text, using paragraph breaks as shown below.
             }
-          ],
-          "performanceSummary": {
-            "totalScore": "X/Y",
-            "strongTopics": ["___", "___"],
-            "weakTopics": ["___", "___"],
-            "suggestionsForImprovement": ["___", "___"]
-          }
-        }`;
+            
+            **Clarification Formatting Instructions:**
+            - The clarification must be written in **plain text** with **no markdown formatting** (e.g., no **bold**, _italic_, or \`inline code\`).
+            - Use **short, structured paragraphs** with at most **2 sentences per paragraph**.
+            - Separate each paragraph with **a blank line** to improve readability. (2 newlines)
+            - Provide a clear, educational explanation without unnecessary complexity.
+            
+            **Example of correct clarification formatting:**
+            "React PropTypes are used to define expected data types for component props. They help catch type mismatches early during development.
+      
+            The 'intl' prop is an object, typically containing internationalization data. Since its structure is not strictly defined in PropTypes, it can store various localization-related properties.
+      
+            The 'children' prop allows any valid React node, such as elements, text, or fragments. However, it does not accept functions.
+      
+            Boolean props like 'expanded' and 'isPublic' must strictly be true or false values, ensuring component behavior is predictable."
+            
+            IMPORTANT: When assigning topics in "strongTopics" and "weakTopics", ONLY use topics from this fixed list:
+            ${TOPIC_CATEGORIES.join(', ')}
+            
+            Ensure that your response is valid JSON with no additional text.`;
 
 export const summarizePrompt = (selectedCode: string) =>
   `Summarize the following code snippet in under 50 words. Be sure to include all key hooks (e.g. useEffect hooks), functions, and any special handlers (like handleLeaveChannel) that are present. Return only the summary in plain text.

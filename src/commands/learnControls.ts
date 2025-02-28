@@ -140,6 +140,7 @@ export async function quizWithEpisteme(): Promise<void> {
     question: string;
     selectedOption: string;
     correct: boolean;
+    correctAnswer: string;
   }[] = [];
 
   await showNextQuestion(
@@ -162,6 +163,7 @@ export async function quizWithEpisteme(): Promise<void> {
         followupInput,
         selectedCode
       );
+      console.log(newFeedback);
       const followupHTML = getQuizFollowupHTML(newFeedback);
       panel.webview.html = followupHTML;
     } else if (message.type === 'closePanel') {
@@ -181,11 +183,12 @@ async function showNextQuestion(
   if (currentQuestionIndex >= totalQuestions) {
     panel.webview.html = getLoadingStateHTML('Finalizing quiz results');
     const feedback = await generateQuizFeedback(responses);
-    const feedbackhtml = getQuizFeedbackHTML(
+    const feedbackHtml = getQuizFeedbackHTML(
       feedback as unknown as FeedbackResponse,
-      null
+      null,
+      responses
     );
-    panel.webview.html = feedbackhtml;
+    panel.webview.html = feedbackHtml;
     return;
   }
   const currentQuestion = questions[currentQuestionIndex] as {
@@ -193,14 +196,19 @@ async function showNextQuestion(
     options: { label: string; isCorrect: boolean }[];
   };
   panel.webview.html = getQuizQuestionHTML(currentQuestion);
-  const selection = await waitForSelection(panel);
-  if (selection !== undefined) {
-    const selectedOption = currentQuestion.options[selection].label;
-    const isCorrect = currentQuestion.options[selection].isCorrect;
+  const selectedIndex = await waitForSelection(panel);
+  if (selectedIndex !== undefined) {
+    const selectedOption = currentQuestion.options[selectedIndex].label;
+    const isCorrect = currentQuestion.options[selectedIndex].isCorrect;
+
+    const correctAnswer =
+      currentQuestion.options.find((opt) => opt.isCorrect)?.label || 'Unknown';
+
     responses.push({
       question: currentQuestion.question,
       selectedOption,
       correct: isCorrect,
+      correctAnswer, // ✅ Store correct answer explicitly
     });
     if (isCorrect) {
       correctCount++;

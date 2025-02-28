@@ -13,7 +13,7 @@ import {
 
 import { parseLLMResponse, formatLLMResponse } from './uiHelpers';
 
-import { LLM_API_URL } from '../config';
+import { LLM_API_URL } from '../constants';
 
 export function cleanJSONResponse(text: string): string {
   let cleaned = text.trim();
@@ -146,7 +146,6 @@ export async function generateQuizFeedback(
     .join('\n\n');
 
   const prompt = feedbackPrompt(responsesText, diagnostic);
-
   try {
     const data = await callLLM(prompt);
     const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -162,7 +161,7 @@ export async function generateQuizFeedback(
 }
 
 export async function generateQuizFollowupFeedback(
-  responses: { question: string; selectedOption: string; correct: boolean }[],
+  responses: QuizResponses,
   followupInput: string,
   selectedCode: string
 ) {

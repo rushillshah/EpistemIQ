@@ -119,6 +119,7 @@ const handleQuizError = async (
     question: string;
     selectedOption: string;
     correct: boolean;
+    correctAnswer: string;
   }[] = [];
 
   await showNextQuestion(
@@ -142,7 +143,7 @@ async function showNextQuestion(
   mainOptions: Option[],
   diagnostic: vscode.Diagnostic,
   document: vscode.TextDocument,
-  responses: { question: string; selectedOption: string; correct: boolean }[]
+  responses: QuizResponses
 ) {
   if (currentQuestionIndex >= mainOptions.length) {
     await handleTerminateQuiz(diagnostic, document, responses, panel);
@@ -172,10 +173,15 @@ async function showNextQuestion(
   if (selectedIndex !== undefined) {
     const selectedOption = currentQuestion.options[selectedIndex].label;
     const isCorrect = currentQuestion.options[selectedIndex].isCorrect;
+
+    const correctAnswer =
+      currentQuestion.options.find((opt) => opt.isCorrect)?.label || 'Unknown';
+
     responses.push({
       question: currentQuestion.question,
       selectedOption,
       correct: isCorrect,
+      correctAnswer,
     });
   }
 
@@ -193,7 +199,7 @@ async function showNextQuestion(
 const handleTerminateQuiz = async (
   diagnostic: vscode.Diagnostic,
   document: vscode.TextDocument,
-  responses: { question: string; selectedOption: string; correct: boolean }[],
+  responses: QuizResponses,
   panel: vscode.WebviewPanel
 ) => {
   panel.webview.html = getLoadingStateHTML(
@@ -210,7 +216,7 @@ const handleTerminateQuiz = async (
 
   const explanation = await queryLLMForFixSuggestion(diagnostic, document);
 
-  panel.webview.html = getQuizFeedbackHTML(feedback, explanation);
+  panel.webview.html = getQuizFeedbackHTML(feedback, explanation, responses);
 
   while (true) {
     const followupMsg = await waitForMessage(panel, 'submitQuizFollowup');
@@ -241,7 +247,11 @@ const handleTerminateQuiz = async (
         : suggestionsForImprovement,
       quizSummary: newFeedback.quizSummary || quizSummary,
     };
-    panel.webview.html = getQuizFeedbackHTML(newFeedback, explanation);
+    panel.webview.html = getQuizFeedbackHTML(
+      newFeedback,
+      explanation,
+      responses
+    );
 
     panel.webview.postMessage({ type: 'attachToggleScript' });
   }

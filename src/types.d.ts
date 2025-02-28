@@ -21,6 +21,7 @@ type QuizResponses = {
   question: string;
   selectedOption: string;
   correct: boolean;
+  correctAnswer: string;
 }[];
 
 type QuizQuestion = {
@@ -40,11 +41,12 @@ type ChoiceMessage = WebviewMessage & {
 
 type FeedbackResponse = {
   totalScore: string;
-  strongTopics: string[];
-  weakTopics: string[];
+  strongTopics: Record<string, string>;
+  weakTopics: Record<string, string>;
   suggestionsForImprovement: string[];
   quizSummary: string;
   clarification?: string;
+  quizReview: QuizReviewItem[];
 };
 
 type QuizReviewItem = {
@@ -56,13 +58,16 @@ type QuizReviewItem = {
 
 type PerformanceSummary = {
   totalScore: string;
-  strongTopics: string[];
-  weakTopics: string[];
+  strongTopics: Record<string, string>;
+  weakTopics: Record<string, string>;
   suggestionsForImprovement: string[];
 };
 
 type QuizFollowup = {
   clarification: string;
   quizReview: QuizReviewItem[];
-  performanceSummary: PerformanceSummary;
+  totalScore: string;
+  strongTopics: Record<string, string>;
+  weakTopics: Record<string, string>;
+  suggestionsForImprovement: string[];
 };
