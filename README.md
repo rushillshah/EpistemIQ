@@ -29,7 +29,6 @@ EpistemIQ is a Visual Studio Code extension that integrates interactive, inline 
    ```
 
 ```
-lqjenewif
 epesteme-ai
 ├─ .prettierrc
 ├─ README.md
