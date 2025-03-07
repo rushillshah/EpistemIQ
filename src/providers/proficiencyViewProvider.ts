@@ -9,7 +9,9 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
-  public async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
+  public async resolveWebviewView(
+    webviewView: vscode.WebviewView
+  ): Promise<void> {
     webviewView.webview.options = { enableScripts: true };
 
     try {
@@ -21,8 +23,10 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this.getDashboardHTML(proficiencyData);
         webviewView.webview.onDidReceiveMessage((message) => {
           if (message.command === 'openTopicDetails') {
-            console.log("Topic Clickediejiowjif ojifew ifjiewo fjioejwjfo");
-            vscode.commands.executeCommand('epistemiq.viewTopicDetails', message.topic);
+            vscode.commands.executeCommand(
+              'epistemiq.viewTopicDetails',
+              message.topic
+            );
           }
         });
       }
@@ -31,10 +35,12 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-
   private getDashboardHTML(proficiencyData: Proficiency[]): string {
-    proficiencyData.sort((a, b) => new Date(b.last_tested).getTime() - new Date(a.last_tested).getTime());
-  
+    proficiencyData.sort(
+      (a, b) =>
+        new Date(b.last_tested).getTime() - new Date(a.last_tested).getTime()
+    );
+
     const headerRow = `
       <div class="proficiency-card header">
         <div class="topic">Field</div>
@@ -44,17 +50,19 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
         <div class="last-tested">Last Tested</div>
       </div>
     `;
-  
-    const rows = proficiencyData.map((entry) => {
-      const scoreColorClass = this.getScoreColor(entry.accuracy);
-      return `
+
+    const rows = proficiencyData
+      .map((entry) => {
+        const scoreColorClass = this.getScoreColor(entry.accuracy);
+        return `
         <div class="proficiency-card onclick="handleRowClick('${entry.topic}')">
           <div class="topic">${entry.topic}</div>
           <div class="score-ring-container">${getScoreRingHTML(entry.accuracy, scoreColorClass)}</div>
           <div class="last-tested">${entry.last_tested ? new Date(entry.last_tested).toLocaleDateString() : 'Never'}</div>
         </div>`;
-    }).join('');
-  
+      })
+      .join('');
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -157,20 +165,16 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
           ${rows}
         </div>
         <script>
-          console.log('entered this bitch');
           ${getVscodeApiScript()}
           function handleRowClick(topic) {
-            console.log("Topic Clicked:", topic);
             vscode.postMessage({ command: 'openTopicDetails', topic });
           }
 
             document.addEventListener("DOMContentLoaded", () => {
-            console.log("DOM fully loaded, attaching event listeners...");
             
             document.querySelectorAll(".proficiency-card").forEach((card) => {
               card.addEventListener("click", function () {
                 const topic = this.querySelector(".topic").innerText;
-                console.log("Event Listener Triggered for:", topic);
                 handleRowClick(topic);
               });
             });
@@ -202,7 +206,7 @@ export class ProficiencyViewProvider implements vscode.WebviewViewProvider {
   private getScoreColor(percentage: number): string {
     if (percentage >= 80) return 'green';
     if (percentage >= 50) return 'yellow';
-    return 'red'; 
+    return 'red';
   }
 }
 

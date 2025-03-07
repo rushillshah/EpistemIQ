@@ -8,11 +8,7 @@ export async function showProficiencyDashboard() {
     vscode.ViewColumn.One,
     { enableScripts: true }
   );
-  console.log('panel has been created')
-
   const proficiencyData = await getAllProficiency();
-  console.log('iqeffeioefiwoiefwoiwfoe', proficiencyData);
-
   panel.webview.html = getDashboardHTML(proficiencyData);
 }
 

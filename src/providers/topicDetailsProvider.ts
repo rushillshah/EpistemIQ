@@ -11,17 +11,28 @@ export class TopicDetailsViewProvider implements vscode.WebviewViewProvider {
     this.topic = topic;
   }
 
-  public async resolveWebviewView(webviewView: vscode.WebviewView): Promise<void> {
+  public async resolveWebviewView(
+    webviewView: vscode.WebviewView
+  ): Promise<void> {
     webviewView.webview.options = { enableScripts: true };
     const proficiency = await getProficiency(this.topic);
-    webviewView.webview.html = this.getTopicDetailsHTML(this.topic, proficiency);
+    webviewView.webview.html = this.getTopicDetailsHTML(
+      this.topic,
+      proficiency
+    );
   }
 
   public getTopicDetailsHTML(topic: string, proficiency: Proficiency): string {
-    const avgAccuracy = proficiency?.accuracy ? `${(proficiency.accuracy).toFixed(2)}%` : 'N/A';
+    const avgAccuracy = proficiency?.accuracy
+      ? `${proficiency.accuracy.toFixed(2)}%`
+      : 'N/A';
     const totalQuizzes = proficiency?.total_questions ?? 'N/A';
-    const avgTime = proficiency?.average_time ? `${proficiency.average_time.toFixed(2)}s` : 'N/A';
-    const lastQuiz = proficiency?.last_tested ? new Date(proficiency.last_tested).toLocaleDateString() : 'N/A';
+    const avgTime = proficiency?.average_time
+      ? `${proficiency.average_time.toFixed(2)}s`
+      : 'N/A';
+    const lastQuiz = proficiency?.last_tested
+      ? new Date(proficiency.last_tested).toLocaleDateString()
+      : 'N/A';
 
     return `
       <!DOCTYPE html>

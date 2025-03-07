@@ -5,7 +5,6 @@ import { getCommonStyles } from '../styles';
 
 import { formatLLMResponse } from '../../ui/uiHelpers';
 
-
 export function getUnderstandInputHTML(code: string): string {
   const formattedCode = formatLLMResponse(code);
   const bodyContent = `

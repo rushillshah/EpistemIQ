@@ -13,7 +13,10 @@ import {
   getQuizFocusHTML,
   getQuizFollowupHTML,
 } from '../utils/html/templates/quizTemplates';
-import { getUnderstandInputHTML, getUnderstandResultWithFollowupHTML } from '../utils/html/templates/explainTemplates';
+import {
+  getUnderstandInputHTML,
+  getUnderstandResultWithFollowupHTML,
+} from '../utils/html/templates/explainTemplates';
 import { getLoadingStateHTML } from '../utils/html/templates/reusableComponents';
 import { getRandomLoadingMessage } from '../utils/ui/uiHelpers';
 import { updateProficiency } from '../db/proficiency/db';

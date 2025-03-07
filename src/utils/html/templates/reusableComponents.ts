@@ -1,6 +1,9 @@
-import { htmlDocument, getVscodeApiScript } from "../utils";
+import { htmlDocument, getVscodeApiScript } from '../utils';
 
-export function getScoreRingHTML(percentage: number, scoreColorClass: string): string {
+export function getScoreRingHTML(
+  percentage: number,
+  scoreColorClass: string
+): string {
   return `
     <div class="score-container">
       <svg class="score-ring" viewBox="0 0 100 100">
@@ -15,8 +18,8 @@ export function getScoreRingHTML(percentage: number, scoreColorClass: string): s
   `;
 }
 
-  export function getFollowupSection(followupType: string): string {
-    return `
+export function getFollowupSection(followupType: string): string {
+  return `
       <div class="fixed-input-container">
         <div class="input-wrapper">
           <textarea id="followupInput" placeholder="Type your follow-up question..."></textarea>
@@ -42,15 +45,14 @@ export function getScoreRingHTML(percentage: number, scoreColorClass: string): s
         });
       </script>
     `;
-  }
-  
-  export function getLoadingStateHTML(message: string): string {
-    const bodyContent = `
+}
+
+export function getLoadingStateHTML(message: string): string {
+  const bodyContent = `
       <div class="loading-container">
         <p class="loading-text">${message}<span class="loading-dots"></span></p>
         <div class="spinner"></div>
       </div>
     `;
-    return htmlDocument(bodyContent, false);
-  }
-  
+  return htmlDocument(bodyContent, false);
+}

@@ -9,20 +9,16 @@ import { EpistemeCodeActionProvider } from './providers/codeActionsProvider';
 import { EpistemeCodeLensProvider } from './providers/codeLensProvider';
 import { registerEpistemeContentProvider } from './providers/epistemeContentProvider';
 import { initDatabase } from './db/proficiency/db';
-import {
-  showProficiencyDashboard,
-} from './commands/dashboard';
+import { showProficiencyDashboard } from './commands/dashboard';
 import { ProficiencyViewProvider } from './providers/proficiencyViewProvider';
 import { TopicDetailsViewProvider } from './providers/topicDetailsProvider';
 import { getProficiency } from './db/proficiency/db';
 
-
 export function activate(context: vscode.ExtensionContext): void {
   vscode.window.showInformationMessage('EpistemIQ is now active!');
 
-  initDatabase(context); 
+  initDatabase(context);
 
-  // Register Proficiency Dashboard
   const sidebarProvider = new ProficiencyViewProvider(context.extensionUri);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -70,32 +66,39 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
-  const topicDetailsProvider = new TopicDetailsViewProvider(context.extensionUri);
+  const topicDetailsProvider = new TopicDetailsViewProvider(
+    context.extensionUri
+  );
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('epistemiq.topicDetails', topicDetailsProvider)
+    vscode.window.registerWebviewViewProvider(
+      'epistemiq.topicDetails',
+      topicDetailsProvider
+    )
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('epistemiq.viewTopicDetails', async (topic: string) => {
-      console.log(`[EXTENSION] Opening topic details for ${topic}`);
-      topicDetailsProvider.setTopic(topic);
-  
-      const panel = vscode.window.createWebviewPanel(
-        'epistemiq.topicDetails',
-        `${topic} Details`,
-        vscode.ViewColumn.One,
-        { enableScripts: true }
-      );
-  
-      const proficiency = await getProficiency(topic);
-      console.log(`[EXTENSION] Proficiency for ${topic}:`, proficiency);
-      panel.webview.html = topicDetailsProvider.getTopicDetailsHTML(topic, proficiency);
-    })
+    vscode.commands.registerCommand(
+      'epistemiq.viewTopicDetails',
+      async (topic: string) => {
+        topicDetailsProvider.setTopic(topic);
+
+        const panel = vscode.window.createWebviewPanel(
+          'epistemiq.topicDetails',
+          `${topic} Details`,
+          vscode.ViewColumn.One,
+          { enableScripts: true }
+        );
+
+        const proficiency = await getProficiency(topic);
+        panel.webview.html = topicDetailsProvider.getTopicDetailsHTML(
+          topic,
+          proficiency
+        );
+      }
+    )
   );
 
   context.subscriptions.push(registerEpistemeContentProvider());
-
-  console.log('[EXTENSION] ProficiencyViewProvider registered');
 }
 
 export function deactivate(): void {}
