@@ -6,17 +6,20 @@ import {
   generateSnippetExplanation,
   summarizeCode,
   generateQuizFollowupFeedback,
-} from '../utils/queryHelpers';
+} from '../utils/llm/queryHelpers';
 import {
   getQuizFeedbackHTML,
-  getUnderstandInputHTML,
-  getUnderstandResultWithFollowupHTML,
   getQuizQuestionHTML,
   getQuizFocusHTML,
-  getLoadingStateHTML,
   getQuizFollowupHTML,
-} from '../utils/html/templates';
-import { getRandomLoadingMessage } from '../utils/uiHelpers';
+} from '../utils/html/templates/quizTemplates';
+import {
+  getUnderstandInputHTML,
+  getUnderstandResultWithFollowupHTML,
+} from '../utils/html/templates/explainTemplates';
+import { getLoadingStateHTML } from '../utils/html/templates/reusableComponents';
+import { getRandomLoadingMessage } from '../utils/ui/uiHelpers';
+import { updateProficiency } from '../db/proficiency/db';
 
 export async function understandWithEpisteme(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
@@ -141,6 +144,7 @@ export async function quizWithEpisteme(): Promise<void> {
     selectedOption: string;
     correct: boolean;
     correctAnswer: string;
+    responseTime: number;
   }[] = [];
 
   await showNextQuestion(
@@ -163,7 +167,6 @@ export async function quizWithEpisteme(): Promise<void> {
         followupInput,
         selectedCode
       );
-      console.log(newFeedback);
       const followupHTML = getQuizFollowupHTML(newFeedback);
       panel.webview.html = followupHTML;
     } else if (message.type === 'closePanel') {
@@ -183,24 +186,25 @@ async function showNextQuestion(
   if (currentQuestionIndex >= totalQuestions) {
     panel.webview.html = getLoadingStateHTML('Finalizing quiz results');
     const feedback = await generateQuizFeedback(responses);
-    const feedbackHtml = getQuizFeedbackHTML(
-      feedback as unknown as FeedbackResponse,
-      null,
-      responses
-    );
+    const feedbackHtml = getQuizFeedbackHTML(feedback, null, responses);
     panel.webview.html = feedbackHtml;
     return;
   }
-  const currentQuestion = questions[currentQuestionIndex] as {
-    question: string;
-    options: { label: string; isCorrect: boolean }[];
-  };
+
+  const currentQuestion = questions[currentQuestionIndex] as QuizQuestion;
+
+  const startTime = Date.now();
+
   panel.webview.html = getQuizQuestionHTML(currentQuestion);
+
   const selectedIndex = await waitForSelection(panel);
+
   if (selectedIndex !== undefined) {
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+
     const selectedOption = currentQuestion.options[selectedIndex].label;
     const isCorrect = currentQuestion.options[selectedIndex].isCorrect;
-
     const correctAnswer =
       currentQuestion.options.find((opt) => opt.isCorrect)?.label || 'Unknown';
 
@@ -208,12 +212,19 @@ async function showNextQuestion(
       question: currentQuestion.question,
       selectedOption,
       correct: isCorrect,
-      correctAnswer, // ✅ Store correct answer explicitly
+      correctAnswer,
+      responseTime,
     });
+
+    const topic = currentQuestion.topic || 'General';
+
+    updateProficiency(topic, isCorrect, responseTime);
+
     if (isCorrect) {
       correctCount++;
     }
   }
+
   currentQuestionIndex++;
   await showNextQuestion(
     panel,

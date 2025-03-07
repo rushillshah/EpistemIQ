@@ -7,15 +7,16 @@ import {
   generateSnippetExplanation,
   summarizeCode,
   generateQuizFeedback,
-} from '../utils/queryHelpers';
+} from '../utils/llm/queryHelpers';
 import {
-  getCombinedExplanationTemplate,
   buildQuizHtml,
   getInitialChoiceTemplate,
   getQuizFeedbackHTML,
-  getLoadingStateHTML,
-} from '../utils/html/templates';
-import { getRandomLoadingMessage } from '../utils/uiHelpers';
+} from '../utils/html/templates/quizTemplates';
+import { getCombinedExplanationTemplate } from '../utils/html/templates/explainTemplates';
+import { getLoadingStateHTML } from '../utils/html/templates/reusableComponents';
+import { getRandomLoadingMessage } from '../utils/ui/uiHelpers';
+import { updateProficiency } from '../db/proficiency/db';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function waitForMessage(
@@ -41,7 +42,7 @@ export async function learnWithEpisteme(
 
   const panel = vscode.window.createWebviewPanel(
     'learnWithEpistemeQuiz',
-    'Learn with Episteme',
+    'Learn with EpistemIQ',
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
@@ -120,6 +121,7 @@ const handleQuizError = async (
     selectedOption: string;
     correct: boolean;
     correctAnswer: string;
+    responseTime: number;
   }[] = [];
 
   await showNextQuestion(
@@ -153,7 +155,10 @@ async function showNextQuestion(
   const currentQuestion = mainOptions[currentQuestionIndex] as unknown as {
     question: string;
     options: { label: string; isCorrect: boolean }[];
+    topic: string;
   };
+
+  const startTime = Date.now();
 
   panel.webview.html = buildQuizHtml(
     currentQuestion.options.map((opt) => ({
@@ -171,6 +176,9 @@ async function showNextQuestion(
       : selectionMsg;
 
   if (selectedIndex !== undefined) {
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+
     const selectedOption = currentQuestion.options[selectedIndex].label;
     const isCorrect = currentQuestion.options[selectedIndex].isCorrect;
 
@@ -182,7 +190,11 @@ async function showNextQuestion(
       selectedOption,
       correct: isCorrect,
       correctAnswer,
+      responseTime,
     });
+
+    const topic = currentQuestion.topic || 'General';
+    updateProficiency(topic, isCorrect, responseTime);
   }
 
   currentQuestionIndex++;
@@ -202,10 +214,12 @@ const handleTerminateQuiz = async (
   responses: QuizResponses,
   panel: vscode.WebviewPanel
 ) => {
-  panel.webview.html = getLoadingStateHTML(
-    'Explaining and formulating feedback'
-  );
+  panel.webview.html = getLoadingStateHTML('Finalizing quiz results');
+
+  // ✅ Pass responses to feedback function
   const feedback = await generateQuizFeedback(responses, diagnostic.message);
+
+  // ✅ Extract necessary data from feedback
   const {
     totalScore,
     strongTopics,
@@ -247,12 +261,12 @@ const handleTerminateQuiz = async (
         : suggestionsForImprovement,
       quizSummary: newFeedback.quizSummary || quizSummary,
     };
+
     panel.webview.html = getQuizFeedbackHTML(
       newFeedback,
       explanation,
       responses
     );
-
     panel.webview.postMessage({ type: 'attachToggleScript' });
   }
 };

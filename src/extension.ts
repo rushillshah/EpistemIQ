@@ -8,16 +8,30 @@ import {
 import { EpistemeCodeActionProvider } from './providers/codeActionsProvider';
 import { EpistemeCodeLensProvider } from './providers/codeLensProvider';
 import { registerEpistemeContentProvider } from './providers/epistemeContentProvider';
+import { initDatabase } from './db/proficiency/db';
+import { showProficiencyDashboard } from './commands/dashboard';
+import { ProficiencyViewProvider } from './providers/proficiencyViewProvider';
+import { TopicDetailsViewProvider } from './providers/topicDetailsProvider';
+import { getProficiency } from './db/proficiency/db';
 
 export function activate(context: vscode.ExtensionContext): void {
   vscode.window.showInformationMessage('EpistemIQ is now active!');
+
+  initDatabase(context);
+
+  const sidebarProvider = new ProficiencyViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      'epistemiq.proficiency',
+      sidebarProvider
+    )
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('epistemiq.start', () => {
       createAssistantPanel();
     })
   );
-
   context.subscriptions.push(
     vscode.commands.registerCommand('epistemiq.errors', learnWithEpisteme)
   );
@@ -29,6 +43,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(
     vscode.commands.registerCommand('epistemiq.quiz', quizWithEpisteme)
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'epistemiq.viewProficiency',
+      showProficiencyDashboard
+    )
   );
 
   context.subscriptions.push(
@@ -43,6 +63,38 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.languages.registerCodeLensProvider(
       { scheme: 'file' },
       new EpistemeCodeLensProvider()
+    )
+  );
+
+  const topicDetailsProvider = new TopicDetailsViewProvider(
+    context.extensionUri
+  );
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      'epistemiq.topicDetails',
+      topicDetailsProvider
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'epistemiq.viewTopicDetails',
+      async (topic: string) => {
+        topicDetailsProvider.setTopic(topic);
+
+        const panel = vscode.window.createWebviewPanel(
+          'epistemiq.topicDetails',
+          `${topic} Details`,
+          vscode.ViewColumn.One,
+          { enableScripts: true }
+        );
+
+        const proficiency = await getProficiency(topic);
+        panel.webview.html = topicDetailsProvider.getTopicDetailsHTML(
+          topic,
+          proficiency
+        );
+      }
     )
   );
 

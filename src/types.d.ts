@@ -22,10 +22,12 @@ type QuizResponses = {
   selectedOption: string;
   correct: boolean;
   correctAnswer: string;
+  responseTime: number;
 }[];
 
 type QuizQuestion = {
   question: string;
+  topic: string;
   options: { label: string; isCorrect: boolean }[];
 };
 
@@ -70,4 +72,12 @@ type QuizFollowup = {
   strongTopics: Record<string, string>;
   weakTopics: Record<string, string>;
   suggestionsForImprovement: string[];
+};
+
+type Proficiency = {
+  total_questions: number;
+  accuracy: number;
+  average_time: number;
+  topic: string;
+  last_tested: string;
 };
