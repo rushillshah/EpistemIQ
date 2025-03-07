@@ -11,6 +11,24 @@
     "*"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "epistemiqSidebar",
+          "title": "EpistemIQ",
+          "icon": "resources/epistemiq.svg"
+        }
+      ]
+    },
+    "views": {
+      "epistemiqSidebar": [
+        {
+          "type": "webview",
+          "id": "epistemiq.proficiency",
+          "name": "Proficiency Dashboard"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "epistemiq.understand",
@@ -23,6 +41,10 @@
       {
         "command": "epistemiq.errors",
         "title": "Debug with EpistemIQ"
+      },
+      {
+        "command": "epistemiq.viewProficiency",
+        "title": "View Proficiency Dashboard"
       }
     ],
     "menus": {
@@ -50,6 +72,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/diff": "^7.0.1",
     "@types/vscode": "^1.75.0",
     "eslint": "^9.21.0",
@@ -59,6 +82,8 @@
     "typescript-eslint": "^8.24.1"
   },
   "dependencies": {
-    "diff": "^7.0.0"
+    "diff": "^7.0.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   }
 }
